@@ -544,22 +544,25 @@ public class BlockchainService extends LifecycleService {
                     blockStore = new SPVBlockStore(Constants.NETWORK_PARAMETERS, blockChainFile);
                     blockStore.getChainHead(); // detect corruptions as early as possible
 
-                    final long earliestKeyCreationTime = wallet.getEarliestKeyCreationTime();
+                    final long earliestKeyCreationTime = 0;
 
-                    if (!blockChainFileExists && earliestKeyCreationTime > 0) {
-                        try {
-                            final Stopwatch watch = Stopwatch.createStarted();
-                            final InputStream checkpointsInputStream = getAssets()
-                                    .open(Constants.Files.CHECKPOINTS_FILENAME);
-                            CheckpointManager.checkpoint(Constants.NETWORK_PARAMETERS, checkpointsInputStream,
-                                    blockStore, earliestKeyCreationTime);
-                            watch.stop();
-                            log.info("checkpoints loaded from '{}', took {}", Constants.Files.CHECKPOINTS_FILENAME,
-                                    watch);
-                        } catch (final IOException x) {
-                            log.error("problem reading checkpoints, continuing without", x);
-                        }
-                    }
+
+//                    final long earliestKeyCreationTime = wallet.getEarliestKeyCreationTime();
+//
+//                    if (!blockChainFileExists && earliestKeyCreationTime > 0) {
+//                        try {
+//                            final Stopwatch watch = Stopwatch.createStarted();
+//                            final InputStream checkpointsInputStream = getAssets()
+//                                    .open(Constants.Files.CHECKPOINTS_FILENAME);
+//                            CheckpointManager.checkpoint(Constants.NETWORK_PARAMETERS, checkpointsInputStream,
+//                                    blockStore, earliestKeyCreationTime);
+//                            watch.stop();
+//                            log.info("checkpoints loaded from '{}', took {}", Constants.Files.CHECKPOINTS_FILENAME,
+//                                    watch);
+//                        } catch (final IOException x) {
+//                            log.error("problem reading checkpoints, continuing without", x);
+//                        }
+//                    }
                 } catch (final BlockStoreException x) {
                     blockChainFile.delete();
 
@@ -714,8 +717,8 @@ public class BlockchainService extends LifecycleService {
                 peerGroup.setPeerDiscoveryTimeoutMillis(Constants.PEER_DISCOVERY_TIMEOUT_MS);
 
                 peerGroup.addPeerDiscovery(new PeerDiscovery() {
-                    private final PeerDiscovery normalPeerDiscovery = MultiplexingDiscovery
-                            .forServices(Constants.NETWORK_PARAMETERS, 0);
+//                    private final PeerDiscovery normalPeerDiscovery = MultiplexingDiscovery
+//                            .forServices(Constants.NETWORK_PARAMETERS, 0);
 
                     @Override
                     public InetSocketAddress[] getPeers(final long services, final long timeoutValue,
@@ -737,8 +740,8 @@ public class BlockchainService extends LifecycleService {
                         }
 
                         if (!connectTrustedPeerOnly)
-                            peers.addAll(
-                                    Arrays.asList(normalPeerDiscovery.getPeers(services, timeoutValue, timeoutUnit)));
+//                            peers.addAll(
+//                                    Arrays.asList(normalPeerDiscovery.getPeers(services, timeoutValue, timeoutUnit)));
 
                         // workaround because PeerGroup will shuffle peers
                         if (needsTrimPeersWorkaround)
@@ -750,7 +753,7 @@ public class BlockchainService extends LifecycleService {
 
                     @Override
                     public void shutdown() {
-                        normalPeerDiscovery.shutdown();
+//                        normalPeerDiscovery.shutdown();
                     }
                 });
 

@@ -17,7 +17,11 @@
 
 package de.schildbach.wallet.ui;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
@@ -33,6 +37,8 @@ import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.Transaction.Purpose;
 import org.bitcoinj.core.TransactionConfidence;
 import org.bitcoinj.core.TransactionConfidence.ConfidenceType;
+import org.bitcoinj.core.TransactionOutput;
+import org.bitcoinj.script.Script;
 import org.bitcoinj.utils.ExchangeRate;
 import org.bitcoinj.utils.Fiat;
 import org.bitcoinj.utils.MonetaryFormat;
@@ -65,6 +71,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
+
+import static de.schildbach.wallet.ui.AbstractWalletActivity.log;
 
 /**
  * @author Andreas Schildbach
@@ -102,6 +110,9 @@ public class TransactionsAdapter extends ListAdapter<TransactionsAdapter.ListIte
             @Nullable
             public final Coin fee;
             public final MonetaryFormat feeFormat;
+            @Nullable
+            public final String opReturn;
+            public final int opReturnColor;
             @Nullable
             public final Coin value;
             public final MonetaryFormat valueFormat;
@@ -271,6 +282,33 @@ public class TransactionsAdapter extends ListAdapter<TransactionsAdapter.ListIte
                     this.valueColor = valueColor;
                     this.value = showFee ? value.add(fee) : value;
                 }
+
+                // opReturn
+                String opReturn = null;
+
+                for (TransactionOutput txOut : tx.getOutputs()) {
+                    Script script = txOut.getScriptPubKey();
+
+                    if (script.isOpReturn()) {
+                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                        try {
+                            script.getChunks().get(1).write(byteArrayOutputStream);
+                        } catch (IOException ex) {
+                            log.error("Exception while writing to ByteArrayOutputStream", ex);
+                        }
+                        // FIRST BYTE IS METADATA
+                        byte[] opreturn = byteArrayOutputStream.toByteArray();
+                        opreturn = Arrays.copyOfRange(opreturn, 1, opreturn.length);
+                        try {
+                            opReturn = new String(opreturn, "UTF-8");
+                        } catch (UnsupportedEncodingException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                this.opReturn = opReturn;
+                this.opReturnColor = colorSignificant;
+                log.info("OPReturn: " + opReturn);
 
                 // fiat value
                 final ExchangeRate exchangeRate = tx.getExchangeRate();
@@ -773,8 +811,13 @@ public class TransactionsAdapter extends ListAdapter<TransactionsAdapter.ListIte
 
         private void bindAddress(final TransactionItem item) {
             extendAddressView.setVisibility(item.address != null || !item.isSelected ? View.VISIBLE : View.GONE);
-            addressView.setText(item.address);
-            addressView.setTextColor(item.addressColor);
+            if (item.opReturn != null){
+                addressView.setText(item.opReturn);
+                addressView.setTextColor(item.opReturnColor);
+            }else {
+                addressView.setText(item.address);
+                addressView.setTextColor(item.addressColor);
+            }
             addressView.setTypeface(item.addressTypeface);
             addressView.setSingleLine(item.addressSingleLine);
         }

@@ -20,11 +20,16 @@ package de.schildbach.wallet;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.bitcoinj.core.Address;
+import org.bitcoinj.core.Base58;
+import org.bitcoinj.core.DumpedPrivateKey;
+import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.VerificationException;
 import org.bitcoinj.core.VersionMessage;
@@ -179,7 +184,7 @@ public class WalletApplication extends Application {
             @WorkerThread
             private void loadWalletFromProtobuf() {
                 Wallet wallet;
-                if (walletFile.exists()) {
+                if (walletFile.exists() && !Constants.ALWAYS_REGENERATE_WALLET) {
                     try (final FileInputStream walletStream = new FileInputStream(walletFile)) {
                         final Stopwatch watch = Stopwatch.createStarted();
                         wallet = new WalletProtobufSerializer().readWallet(walletStream);
@@ -211,13 +216,40 @@ public class WalletApplication extends Application {
                             TimeUnit.MILLISECONDS, null);
                 } else {
                     final Stopwatch watch = Stopwatch.createStarted();
+
                     wallet = new Wallet(Constants.NETWORK_PARAMETERS);
+
+                    //Catena Configuration
+                    //Address watchedAddress = new Address(Constants.NETWORK_PARAMETERS, Constants.CATENA_ADDRESS);
+                    //boolean addWatchedAddresss = wallet.addWatchedAddress(watchedAddress);
+                    //log.info("Added watched address - " + addWatchedAddresss);
+
+                    // Decode the private key from Satoshis Base58 variant. If 51 characters long then it's from Bitcoins
+                    // dumpprivkey command and includes a version byte and checksum, or if 52 characters long then it has
+                    // compressed pub key. Otherwise assume it's a raw key.
+                    ECKey key;
+                    if (Constants.CATENA_PRIVATE_KEY.length() == 51 || Constants.CATENA_PRIVATE_KEY.length() == 52) {
+                        DumpedPrivateKey dumpedPrivateKey = DumpedPrivateKey.fromBase58(Constants.NETWORK_PARAMETERS, Constants.CATENA_PRIVATE_KEY);
+                        key = dumpedPrivateKey.getKey();
+                    } else {
+                        BigInteger privKey = Base58.decodeToBigInteger(Constants.CATENA_PRIVATE_KEY);
+                        key = ECKey.fromPrivate(privKey);
+                    }
+                    System.out.println("Address from private key is: " + key);
+                    // And the address ...
+
+                    // Import the private key to a wallet.
+                    wallet.importKey(key);
+
                     walletFiles = wallet.autosaveToFile(walletFile, Constants.Files.WALLET_AUTOSAVE_DELAY_MS,
                             TimeUnit.MILLISECONDS, null);
                     autosaveWalletNow(); // persist...
                     WalletUtils.autoBackupWallet(WalletApplication.this, wallet); // ...and backup asap
                     watch.stop();
                     log.info("fresh wallet created, took {}", watch);
+                    log.info("Wallet with info - " + wallet.toString());
+                    log.info("Wallet Seed: " + wallet.getKeyChainSeed());
+
 
                     config.armBackupReminder();
                 }

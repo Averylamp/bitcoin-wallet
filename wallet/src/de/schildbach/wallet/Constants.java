@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import org.bitcoinj.core.Context;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.params.MainNetParams;
+import org.bitcoinj.params.RegTestParams;
 import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.utils.MonetaryFormat;
 import org.slf4j.Logger;
@@ -44,7 +45,14 @@ public final class Constants {
     public static final boolean TEST = true;
 
     /** Network this wallet is on (e.g. testnet or mainnet). */
-    public static final NetworkParameters NETWORK_PARAMETERS = TEST ? TestNet3Params.get() : MainNetParams.get();
+    public static final NetworkParameters NETWORK_PARAMETERS = TEST ? RegTestParams.get() : MainNetParams.get();
+
+    public static final boolean ALWAYS_REDOWNLOAD_BLOCKCHAIN = true;
+
+    public static final boolean ALWAYS_REGENERATE_WALLET = false;
+
+//    public static final String CATENA_ADDRESS = "mpKRGvxSp14tyVYEVQCNt798DNURMB21Gy";
+    public static final String CATENA_PRIVATE_KEY = "cUtGHpqUzCJTEGBj2U8pBxfqR2BEHEyCHG7kRdnhaxjPo1A5mAzR";
 
     /** Bitcoinj global context. */
     public static final Context CONTEXT = new Context(NETWORK_PARAMETERS);

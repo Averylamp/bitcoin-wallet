@@ -34,6 +34,8 @@ import android.text.style.ScaleXSpan;
 import android.util.AttributeSet;
 import android.widget.TextView;
 
+import static de.schildbach.wallet.ui.AbstractWalletActivity.log;
+
 /**
  * @author Andreas Schildbach
  */
@@ -115,7 +117,7 @@ public final class CurrencyTextView extends TextView {
                     new Object[] { insignificantRelativeSizeSpan });
         else
             text = null;
-
+        log.info("Text: " + text);
         setText(text);
     }
 }
