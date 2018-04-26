@@ -44,6 +44,8 @@ import org.bitcoinj.utils.Fiat;
 import org.bitcoinj.utils.MonetaryFormat;
 import org.bitcoinj.wallet.DefaultCoinSelector;
 import org.bitcoinj.wallet.Wallet;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.R;
@@ -91,6 +93,11 @@ public class TransactionsAdapter extends ListAdapter<TransactionsAdapter.ListIte
         return items;
     }
 
+//    public static class ReceiptTransaction{
+//        private String name;
+//        private String value;
+//        private String warehosue
+//    }
     public static class ListItem {
         public static class TransactionItem extends ListItem {
             public final Sha256Hash transactionHash;
@@ -113,6 +120,9 @@ public class TransactionsAdapter extends ListAdapter<TransactionsAdapter.ListIte
             @Nullable
             public final String opReturn;
             public final int opReturnColor;
+            @Nullable
+            public final String opReturnDeserialized;
+            public final int opReturnDeserializedColor;
             @Nullable
             public final Coin value;
             public final MonetaryFormat valueFormat;
@@ -308,7 +318,18 @@ public class TransactionsAdapter extends ListAdapter<TransactionsAdapter.ListIte
                 }
                 this.opReturn = opReturn;
                 this.opReturnColor = colorSignificant;
-                log.info("OPReturn: " + opReturn);
+                if (this.opReturn != null) {
+                    try {
+                        log.info("JSON: Attempting to parse: " + opReturn);
+                        JSONObject jObject = new JSONObject(opReturn);
+                        log.info("JSON Results: " + jObject);
+                    } catch (JSONException e) {
+                        log.info("JSON: Unable to parse json" + e);
+                    }
+                }
+                this.opReturnDeserialized = opReturn;
+                this.opReturnDeserializedColor = colorSignificant;
+
 
                 // fiat value
                 final ExchangeRate exchangeRate = tx.getExchangeRate();
@@ -636,35 +657,35 @@ public class TransactionsAdapter extends ListAdapter<TransactionsAdapter.ListIte
             final WarningViewHolder warningHolder = (WarningViewHolder) holder;
             final ListItem.WarningItem warningItem = (ListItem.WarningItem) listItem;
             if (warningItem.type == WarningType.BACKUP) {
-                if (getItemCount() == 2 /* 1 transaction, 1 warning */) {
-                    warningHolder.messageView.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
-                    warningHolder.messageView
-                            .setText(Html.fromHtml(context.getString(R.string.wallet_transactions_row_warning_backup)));
-                } else {
-                    warningHolder.messageView
-                            .setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_warning_grey600_24dp, 0, 0, 0);
-                    warningHolder.messageView.setText(
-                            Html.fromHtml(context.getString(R.string.wallet_disclaimer_fragment_remind_backup)));
-                }
+//                if (getItemCount() == 2 /* 1 transaction, 1 warning */) {
+//                    warningHolder.messageView.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
+//                    warningHolder.messageView
+//                            .setText(Html.fromHtml(context.getString(R.string.wallet_transactions_row_warning_backup)));
+//                } else {
+//                    warningHolder.messageView
+//                            .setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_warning_grey600_24dp, 0, 0, 0);
+//                    warningHolder.messageView.setText(
+//                            Html.fromHtml(context.getString(R.string.wallet_disclaimer_fragment_remind_backup)));
+//                }
             } else if (warningItem.type == WarningType.STORAGE_ENCRYPTION) {
-                warningHolder.messageView.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
-                warningHolder.messageView.setText(
-                        Html.fromHtml(context.getString(R.string.wallet_transactions_row_warning_storage_encryption)));
+//                warningHolder.messageView.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
+//                warningHolder.messageView.setText(
+//                        Html.fromHtml(context.getString(R.string.wallet_transactions_row_warning_storage_encryption)));
             } else if (warningItem.type == WarningType.CHAIN_FORKING) {
-                warningHolder.messageView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_warning_grey600_24dp, 0,
-                        0, 0);
-                warningHolder.messageView.setText(
-                        Html.fromHtml(context.getString(R.string.wallet_transactions_row_warning_chain_forking)));
+//                warningHolder.messageView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_warning_grey600_24dp, 0,
+//                        0, 0);
+//                warningHolder.messageView.setText(
+//                        Html.fromHtml(context.getString(R.string.wallet_transactions_row_warning_chain_forking)));
             }
 
             final OnClickListener onClickListener = this.onClickListener;
             if (onClickListener != null) {
-                warningHolder.itemView.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(final View v) {
-                        onClickListener.onWarningClick(v);
-                    }
-                });
+//                warningHolder.itemView.setOnClickListener(new View.OnClickListener() {
+//                    @Override
+//                    public void onClick(final View v) {
+//                        onClickListener.onWarningClick(v);
+//                    }
+//                });
             }
         }
     }

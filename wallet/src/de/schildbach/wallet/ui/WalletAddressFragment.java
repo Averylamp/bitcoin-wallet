@@ -52,7 +52,7 @@ public final class WalletAddressFragment extends Fragment {
     @Nullable
     private NfcAdapter nfcAdapter;
 
-    private ImageView currentAddressQrView;
+//    private ImageView currentAddressQrView;
     private CardView currentAddressQrCardView;
 
     private WalletAddressViewModel viewModel;
@@ -75,15 +75,15 @@ public final class WalletAddressFragment extends Fragment {
             public void onChanged(final Bitmap qrCode) {
                 final BitmapDrawable qrDrawable = new BitmapDrawable(getResources(), qrCode);
                 qrDrawable.setFilterBitmap(false);
-                currentAddressQrView.setImageDrawable(qrDrawable);
-                currentAddressQrCardView.setOnClickListener(new OnClickListener() {
-                    @Override
-                    public void onClick(final View v) {
-                        final Address address = viewModel.currentAddress.getValue();
-                        WalletAddressDialogFragment.show(getFragmentManager(), address, viewModel.ownName.getValue());
-                        log.info("Current address enlarged: {}", address);
-                    }
-                });
+//                currentAddressQrView.setImageDrawable(qrDrawable);
+//                currentAddressQrCardView.setOnClickListener(new OnClickListener() {
+//                    @Override
+//                    public void onClick(final View v) {
+//                        final Address address = viewModel.currentAddress.getValue();
+//                        WalletAddressDialogFragment.show(getFragmentManager(), address, viewModel.ownName.getValue());
+//                        log.info("Current address enlarged: {}", address);
+//                    }
+//                });
             }
         });
         viewModel.bitcoinUri.observe(this, new Observer<Uri>() {
@@ -101,7 +101,7 @@ public final class WalletAddressFragment extends Fragment {
     public View onCreateView(final LayoutInflater inflater, final ViewGroup container,
             final Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.wallet_address_fragment, container, false);
-        currentAddressQrView = (ImageView) view.findViewById(R.id.bitcoin_address_qr);
+//        currentAddressQrView = (ImageView) view.findViewById(R.id.bitcoin_address_qr);
 
         currentAddressQrCardView = (CardView) view.findViewById(R.id.bitcoin_address_qr_card);
         currentAddressQrCardView.setCardBackgroundColor(Color.WHITE);

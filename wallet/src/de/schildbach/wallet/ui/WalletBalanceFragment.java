@@ -18,7 +18,6 @@
 package de.schildbach.wallet.ui;
 
 import org.bitcoinj.core.Coin;
-import org.bitcoinj.utils.Fiat;
 
 import de.schildbach.wallet.Configuration;
 import de.schildbach.wallet.Constants;
@@ -38,7 +37,6 @@ import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.text.format.DateUtils;
@@ -60,9 +58,8 @@ public final class WalletBalanceFragment extends Fragment {
     private Configuration config;
 
     private View viewBalance;
-    private CurrencyTextView viewBalanceBtc;
-    private TextView viewBalanceWarning;
-    private CurrencyTextView viewBalanceLocal;
+    private TextView viewReceiptsTitle;
+    private TextView viewReceiptsSubtitle;
     private TextView viewProgress;
 
     private boolean showLocalBalance;
@@ -171,14 +168,25 @@ public final class WalletBalanceFragment extends Fragment {
             viewBalance.setEnabled(false);
         }
 
-        viewBalanceBtc = (CurrencyTextView) view.findViewById(R.id.wallet_balance_btc);
-        viewBalanceBtc.setPrefixScaleX(0.9f);
+        viewReceiptsTitle = (TextView) view.findViewById(R.id.receipt_title_text_view);
+        viewReceiptsSubtitle = (TextView) view.findViewById(R.id.receipt_subtitle_text_view);
 
-        viewBalanceWarning = (TextView) view.findViewById(R.id.wallet_balance_warning);
+//        viewBalanceBtc = (CurrencyTextView) view.findViewById(R.id.wallet_balance_btc);
+//        viewBalanceBtc.setPrefixScaleX(0.9f);
 
-        viewBalanceLocal = (CurrencyTextView) view.findViewById(R.id.wallet_balance_local);
-        viewBalanceLocal.setInsignificantRelativeSize(1);
-        viewBalanceLocal.setStrikeThru(Constants.TEST);
+//        viewBalanceWarning = (TextView) view.findViewById(R.id.wallet_balance_warning);
+
+//        viewBalanceLocal = (CurrencyTextView) view.findViewById(R.id.wallet_balance_local);
+//        viewBalanceLocal.setInsignificantRelativeSize(1);
+//        viewBalanceLocal.setStrikeThru(Constants.TEST);
+
+        //Hide main view balances
+//        viewBalanceBtc.setVisibility(View.INVISIBLE);
+//        viewBalanceLocal.setVisibility(View.INVISIBLE);
+//        viewBalanceWarning.setVisibility(View.INVISIBLE);
+
+        viewReceiptsTitle.setVisibility(View.INVISIBLE);
+        viewReceiptsSubtitle.setVisibility(View.INVISIBLE);
 
         viewProgress = (TextView) view.findViewById(R.id.wallet_balance_progress);
     }
@@ -250,45 +258,46 @@ public final class WalletBalanceFragment extends Fragment {
         if (!showProgress) {
             viewBalance.setVisibility(View.VISIBLE);
 
-            if (!showLocalBalance)
-                viewBalanceLocal.setVisibility(View.GONE);
+//            if (!showLocalBalance)
+//                viewBalanceLocal.setVisibility(View.GONE);
+//
+//            if (balance != null) {
+//                viewBalanceBtc.setVisibility(View.VISIBLE);
+//                viewBalanceBtc.setFormat(config.getFormat());
+//                viewBalanceBtc.setAmount(balance);
+//
+//                if (showLocalBalance) {
+//                    if (exchangeRate != null) {
+//                        final Fiat localValue = exchangeRate.rate.coinToFiat(balance);
+//                        viewBalanceLocal.setVisibility(View.VISIBLE);
+//                        viewBalanceLocal.setFormat(Constants.LOCAL_FORMAT.code(0,
+//                                Constants.PREFIX_ALMOST_EQUAL_TO + exchangeRate.getCurrencyCode()));
+//                        viewBalanceLocal.setAmount(localValue);
+//                        viewBalanceLocal.setTextColor(getResources().getColor(R.color.fg_less_significant));
+//                    } else {
+//                        viewBalanceLocal.setVisibility(View.INVISIBLE);
+//                    }
+//                }
+//            } else {
+//                viewBalanceBtc.setVisibility(View.INVISIBLE);
+//            }
 
-            if (balance != null) {
-                viewBalanceBtc.setVisibility(View.VISIBLE);
-                viewBalanceBtc.setFormat(config.getFormat());
-                viewBalanceBtc.setAmount(balance);
-
-                if (showLocalBalance) {
-                    if (exchangeRate != null) {
-                        final Fiat localValue = exchangeRate.rate.coinToFiat(balance);
-                        viewBalanceLocal.setVisibility(View.VISIBLE);
-                        viewBalanceLocal.setFormat(Constants.LOCAL_FORMAT.code(0,
-                                Constants.PREFIX_ALMOST_EQUAL_TO + exchangeRate.getCurrencyCode()));
-                        viewBalanceLocal.setAmount(localValue);
-                        viewBalanceLocal.setTextColor(getResources().getColor(R.color.fg_less_significant));
-                    } else {
-                        viewBalanceLocal.setVisibility(View.INVISIBLE);
-                    }
-                }
-            } else {
-                viewBalanceBtc.setVisibility(View.INVISIBLE);
-            }
-
-            if (balance != null && balance.isGreaterThan(TOO_MUCH_BALANCE_THRESHOLD)) {
-                viewBalanceWarning.setVisibility(View.VISIBLE);
-                viewBalanceWarning.setText(R.string.wallet_balance_fragment_too_much);
-            } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-                viewBalanceWarning.setVisibility(View.VISIBLE);
-                viewBalanceWarning.setText(R.string.wallet_balance_fragment_insecure_device);
-            } else {
-                viewBalanceWarning.setVisibility(View.GONE);
-            }
 
             viewProgress.setVisibility(View.GONE);
         } else {
             viewProgress.setVisibility(View.VISIBLE);
             viewBalance.setVisibility(View.INVISIBLE);
         }
-        viewBalanceWarning.setVisibility(View.INVISIBLE);
+
+        viewReceiptsTitle.setText("Total Receipts: 10");
+        viewReceiptsTitle.setVisibility(View.VISIBLE);
+        viewReceiptsSubtitle.setText("Warehouses: 1");
+        viewReceiptsSubtitle.setVisibility(View.VISIBLE);
+//        viewBalanceWarning.setVisibility(View.INVISIBLE);
+
+        //Hide main view balances
+//        viewBalanceBtc.setVisibility(View.INVISIBLE);
+//        viewBalanceLocal.setVisibility(View.INVISIBLE);
+//        viewBalanceWarning.setVisibility(View.INVISIBLE);
     }
 }
