@@ -1,0 +1,123 @@
+syntax = "proto3";
+
+import "protos/mpt.proto";
+option java_multiple_files = true;
+option java_package = "io.grpc.bverify";
+
+package api;
+
+/**
+* OVERALL NOTES:
+*	-   an id is a string representing a unique user id 
+*		that allows each client to look up that user in a 
+* 		pki. 
+*/
+
+
+/**
+*	API Interface Exported by the Server
+*/
+service BVerifyServerAPI {
+	
+	rpc Forward(ForwardRequest) returns (ForwardResponse) {}
+	
+	rpc GetForwarded(GetForwardedRequest) returns (GetForwardedResponse) {}
+	
+	rpc Submit(SubmitRequest) returns (SubmitResponse) {}
+		
+	rpc GetDataRequest(DataRequest) returns (DataResponse) {}
+
+	rpc GetAuthPath(PathRequest) returns (PathResponse) {}
+	
+	// only really should be used if no Catena witnessing 
+	rpc GetCommitments(CommitmentsRequest) returns (CommitmentsResponse) {}
+	
+
+}
+
+
+message ForwardRequest {
+	IssueReceiptRequest request = 1;
+	string forward_to_id = 2;
+}
+
+message ForwardResponse {
+	bool added = 1;
+}
+
+message GetForwardedRequest {
+	string id = 1;
+}
+
+message GetForwardedResponse {
+	IssueReceiptRequest request = 1;
+}
+
+message SubmitRequest{
+	IssueReceiptRequest request = 1;
+}
+
+message SubmitResponse{
+	bool accepted = 1;
+}
+
+message DataRequest {
+	bytes adsId = 1;
+	int32 commitmentNumber = 2;
+}
+
+message DataResponse {
+	repeated Receipt receipts = 1;
+}
+
+message PathRequest {
+	repeated bytes adsIds = 1;
+	int32 commitmentNumber = 2;
+}
+
+message PathResponse {
+	serialization.generated.MerklePrefixTrie path = 1;
+}
+
+message CommitmentsRequest {
+
+}
+
+message CommitmentsResponse {
+	repeated bytes commitments = 1;
+}
+
+
+
+
+/** ACTUAL DATA FORMATS **/
+
+/**
+* 	Request to Issue A Receipt along with 
+*	the required signatures
+*/
+message IssueReceiptRequest {
+	Receipt receipt = 1;
+	bytes signature_warehouse = 2;
+	bytes signature_depositor = 3;
+}
+
+/**
+*   Receipt (this is a stand in for arbitrary data)
+*/
+message Receipt {
+    string warehouse_id = 1;
+    string depositor_id = 2;
+    string accountant = 3;
+    string category = 4;
+    string date = 5;
+    string insurance = 6;
+    double weight = 7;
+    double volume = 8;
+    double humidity = 9;
+    double price = 10;
+    string details = 11;
+}
+
+
+

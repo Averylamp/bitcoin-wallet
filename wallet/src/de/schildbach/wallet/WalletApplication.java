@@ -48,6 +48,7 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.SettableFuture;
 
+import bverify.Client;
 import de.schildbach.wallet.service.BlockchainService;
 import de.schildbach.wallet.util.Bluetooth;
 import de.schildbach.wallet.util.CrashReporter;
@@ -92,6 +93,8 @@ public class WalletApplication extends Application {
 
     private static final Logger log = LoggerFactory.getLogger(WalletApplication.class);
 
+    private static Client client;
+
     @Override
     public void onCreate() {
         new LinuxSecureRandom(); // init proper random number generator
@@ -135,6 +138,14 @@ public class WalletApplication extends Application {
         cleanupFiles();
 
         initNotificationManager();
+
+    }
+
+    public Client getBVerifyClient(){
+        if (client == null) {
+            client = new Client("test account");
+        }
+        return client;
     }
 
     public synchronized Configuration getConfiguration() {

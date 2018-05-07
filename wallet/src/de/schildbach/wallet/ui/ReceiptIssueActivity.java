@@ -17,21 +17,34 @@
 
 package de.schildbach.wallet.ui;
 
-import de.schildbach.wallet.R;
-
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.TextView;
+
+import bverify.Receipt;
+import de.schildbach.wallet.R;
 
 /**
  * @author Andreas Schildbach
  */
-public final class RequestCoinsActivity extends AbstractWalletActivity {
+public final class ReceiptIssueActivity extends AbstractWalletActivity {
+
+    private Receipt receiptToVerify;
+
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.receipt_issue_dialog);
+
+        receiptToVerify = (Receipt) getIntent().getExtras().getParcelable("receipt");
+
+
+        final TextView descriptionTextView = findViewById(R.id.receipt_issue_request_information);
+        descriptionTextView.setText(receiptToVerify.toFullDetailString());
+
     }
 
     @Override
@@ -41,18 +54,18 @@ public final class RequestCoinsActivity extends AbstractWalletActivity {
 
     @Override
     public boolean onCreateOptionsMenu(final Menu menu) {
-        getMenuInflater().inflate(R.menu.request_coins_activity_options, menu);
+//        getMenuInflater().inflate(R.menu.request_coins_activity_options, menu);
 
         return super.onCreateOptionsMenu(menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(final MenuItem item) {
-        switch (item.getItemId()) {
-        case R.id.request_coins_options_help:
-            HelpDialogFragment.page(getSupportFragmentManager(), R.string.help_request_coins);
-            return true;
-        }
+//        switch (item.getItemId()) {
+//        case R.id.request_coins_options_help:
+//            HelpDialogFragment.page(getSupportFragmentManager(), R.string.help_request_coins);
+//            return true;
+//        }
 
         return super.onOptionsItemSelected(item);
     }

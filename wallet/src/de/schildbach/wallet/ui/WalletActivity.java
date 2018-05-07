@@ -22,6 +22,7 @@ import org.bitcoinj.core.VerificationException;
 import org.bitcoinj.core.VersionedChecksummedBytes;
 import org.bitcoinj.wallet.Wallet;
 
+import bverify.Receipt;
 import de.schildbach.wallet.Configuration;
 import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.R;
@@ -503,6 +504,12 @@ public final class WalletActivity extends AbstractWalletActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    public void handleReceiptIssue(Receipt receipt){
+        Intent receiptIssueIntent = new Intent(this, ReceiptIssueActivity.class);
+        receiptIssueIntent.putExtra("receipt", receipt);
+        startActivity(receiptIssueIntent);
     }
 
     public void handleRequestCoins() {

@@ -7,7 +7,7 @@
     android:versionName="6.21" >
 
     <uses-sdk
-        android:minSdkVersion="19"
+        android:minSdkVersion="24"
         android:targetSdkVersion="27"
         tools:ignore="OldTargetApi" />
 
@@ -133,6 +133,12 @@
         </activity>
         <activity
             android:name="de.schildbach.wallet.ui.RequestCoinsActivity"
+            android:configChanges="keyboard|keyboardHidden"
+            android:label="@string/request_coins_activity_title"
+            android:theme="@style/My.Theme.ChildActivity"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name="de.schildbach.wallet.ui.ReceiptIssueActivity"
             android:configChanges="keyboard|keyboardHidden"
             android:label="@string/request_coins_activity_title"
             android:theme="@style/My.Theme.ChildActivity"

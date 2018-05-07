@@ -1,11 +1,37 @@
 apply plugin: 'com.android.application'
 apply plugin: 'androidsvgdrawable'
 
+
+buildscript {
+    repositories {
+        maven {
+            // The google mirror is less flaky than mavenCentral()
+            url "https://maven-central.storage-download.googleapis.com/repos/central/data/"
+        }
+    }
+    dependencies {
+        // ASSUMES GRADLE 2.12 OR HIGHER. Use plugin version 0.7.5 with earlier
+        // gradle versions
+        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.3'
+    }
+}
+
+repositories {
+    maven {
+        // The google mirror is less flaky than mavenCentral()
+        url "https://maven-central.storage-download.googleapis.com/repos/central/data/"
+    }
+    mavenLocal()
+}
+
+
 configurations {
     all*.exclude group: 'com.google.android', module: 'android'
     all*.exclude group: 'com.android.support', module: 'support-media-compat'
     all*.exclude group: 'com.github.tony19', module: 'apktool-lib'
 }
+def grpcVersion = '1.11.0' // CURRENT_GRPC_VERSION
+def nettyTcNativeVersion = '2.0.7.Final'
 
 dependencies {
     compile project(':integration-android')
@@ -17,7 +43,7 @@ dependencies {
     compile 'com.android.support:cardview-v7:27.1.1'
     compile 'android.arch.lifecycle:extensions:1.1.0'
     compile 'org.bitcoinj:bitcoinj-core:0.14.7'
-    compile 'com.google.protobuf:protobuf-java:2.6.1'
+    compile 'com.google.protobuf:protobuf-java:3.0.0'
     compile 'com.google.guava:guava:24.1-android'
     compile 'com.google.zxing:core:3.3.2'
     compile 'com.squareup.okhttp3:okhttp:3.10.0'
@@ -26,6 +52,11 @@ dependencies {
     compile 'org.slf4j:slf4j-api:1.7.25'
     compile 'com.github.tony19:logback-android:1.1.1-8'
     compile 'com.google.code.findbugs:jsr305:2.0.3'
+    compile "com.google.api.grpc:proto-google-common-protos:1.0.0"
+    compile "io.grpc:grpc-alts:${grpcVersion}"
+    compile "io.grpc:grpc-netty:${grpcVersion}"
+    compile "io.grpc:grpc-protobuf:${grpcVersion}"
+    compile "io.grpc:grpc-stub:${grpcVersion}"
     testCompile 'junit:junit:4.12'
 }
 
@@ -81,6 +112,8 @@ android {
         exclude 'org/bitcoinj/crypto/cacerts'
         exclude 'org.bitcoin.production.checkpoints.txt'
         exclude 'org.bitcoin.test.checkpoints.txt'
+        pickFirst 'META-INF/INDEX.LIST'
+        pickFirst 'META-INF/io.netty.versions.properties'
     }
 }
 
