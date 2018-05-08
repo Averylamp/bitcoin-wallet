@@ -23,7 +23,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
-import bverify.Receipt;
 import de.schildbach.wallet.R;
 
 /**

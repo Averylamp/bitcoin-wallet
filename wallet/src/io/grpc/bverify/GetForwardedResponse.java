@@ -79,7 +79,7 @@ private static final long serialVersionUID = 0L;
     return Api.internal_static_api_GetForwardedResponse_descriptor;
   }
 
-  protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+  protected FieldAccessorTable
       internalGetFieldAccessorTable() {
     return Api.internal_static_api_GetForwardedResponse_fieldAccessorTable
         .ensureFieldAccessorsInitialized(
@@ -259,7 +259,7 @@ private static final long serialVersionUID = 0L;
 
   @Override
   protected Builder newBuilderForType(
-      com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+      BuilderParent parent) {
     Builder builder = new Builder(parent);
     return builder;
   }
@@ -275,7 +275,7 @@ private static final long serialVersionUID = 0L;
       return Api.internal_static_api_GetForwardedResponse_descriptor;
     }
 
-    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+    protected FieldAccessorTable
         internalGetFieldAccessorTable() {
       return Api.internal_static_api_GetForwardedResponse_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
@@ -288,7 +288,7 @@ private static final long serialVersionUID = 0L;
     }
 
     private Builder(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+        BuilderParent parent) {
       super(parent);
       maybeForceBuilderInitialization();
     }

@@ -19,11 +19,18 @@ package de.schildbach.wallet;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.OutputStream;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Scanner;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.bitcoinj.core.Address;
@@ -49,11 +56,17 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.SettableFuture;
 
 import bverify.Client;
+import bverify.DecompressibleInputStream;
+import demo.MockDepositor;
+import demo.MockWarehouse;
 import de.schildbach.wallet.service.BlockchainService;
 import de.schildbach.wallet.util.Bluetooth;
 import de.schildbach.wallet.util.CrashReporter;
 import de.schildbach.wallet.util.Toast;
 import de.schildbach.wallet.util.WalletUtils;
+import demo.MockWarehouse;
+import pki.Account;
+import pki.PKIDirectory;
 
 import android.app.ActivityManager;
 import android.app.Application;
@@ -64,16 +77,19 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.res.AssetManager;
 import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
 import android.os.Looper;
 import android.os.StrictMode;
 import android.preference.PreferenceManager;
 import android.support.annotation.MainThread;
 import android.support.annotation.WorkerThread;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 
 /**
  * @author Andreas Schildbach
@@ -140,6 +156,8 @@ public class WalletApplication extends Application {
         initNotificationManager();
 
     }
+
+
 
     public Client getBVerifyClient(){
         if (client == null) {

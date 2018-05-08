@@ -259,7 +259,7 @@ public class MockWarehouse implements Runnable {
 	
 	public static void main(String[] args) {
 		String base = System.getProperty("user.dir")  + "/demos/";
-		PKIDirectory pki = new PKIDirectory(base+"pki/");
+		PKIDirectory pki = new PKIDirectory(null);
 		String host = "127.0.0.1";
 		int port = 50051;
 		/**

@@ -1,5 +1,7 @@
 package demo;
 
+import android.util.Log;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -17,6 +19,7 @@ import com.google.protobuf.ByteString;
 
 import crpyto.CryptographicSignature;
 import crpyto.CryptographicUtils;
+import de.schildbach.wallet.ui.WalletActivity;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.bverify.BVerifyServerAPIGrpc;
@@ -43,7 +46,6 @@ import pki.Account;
 import pki.PKIDirectory;
 import server.BVerifyServer;
 
-
 public class MockDepositor implements Runnable {
 	private static final Logger logger = Logger.getLogger(BVerifyServer.class.getName());
 
@@ -63,8 +65,10 @@ public class MockDepositor implements Runnable {
 	private final ManagedChannel channel;
 	private final BVerifyServerAPIBlockingStub blockingStub;
 
-	
-	public MockDepositor(Account a, String host, int port) {
+	private final WalletActivity activity;
+
+	public MockDepositor(Account a, String host, int port, WalletActivity activity) {
+		this.activity = activity;
 		logger.log(Level.INFO, "...loading mock depositor connected to server on host: "+host+" port: "+port);
 	   
 		this.channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
@@ -74,9 +78,9 @@ public class MockDepositor implements Runnable {
 		this.ads = new MPTSetFull();
 		this.adsData = new HashSet<>();
 		assert a.getADSKeys().size() == 1;
-		this.adsKey = a.getADSKeys().iterator().next();	
-		
-		logger.log(Level.INFO, "...loading mock depositor "+a.getFirstName());
+		this.adsKey = a.getADSKeys().iterator().next();
+
+		Log.d("asdf", "...loading mock depositor "+a.getFirstName());
 		logger.log(Level.INFO, "...cares about ads: "+Utils.byteArrayAsHexString(this.adsKey));
 		
 		logger.log(Level.INFO, "...getting commitments from server");
@@ -90,7 +94,7 @@ public class MockDepositor implements Runnable {
 		logger.log(Level.INFO, "...asking for data from the server");
 		List<Receipt> receipts = this.getDataRequest(this.adsKey, this.currentCommitmentNumber);
 		for(Receipt r : receipts) {
-			logger.log(Level.INFO, "...adding receipt: "+r);
+//			logger.log(Level.INFO, "...adding receipt: "+r);
 			this.adsData.add(r);
 			byte[] receiptWitness = CryptographicUtils.witnessReceipt(r);
 			this.ads.insert(receiptWitness);
@@ -99,14 +103,9 @@ public class MockDepositor implements Runnable {
 		logger.log(Level.INFO, "...asking for a proof, checking latest commitment");
 		this.checkCommitment(this.currentCommitment, this.currentCommitmentNumber);
 		logger.log(Level.INFO, "...setup complete!");
-				
+
 	}
-	
-	/**
-	 * Periodically the mock depositor polls the serve and approves any requests
-	 */
-	@Override
-	public void run() {
+	public void checkForCommitments(){
 		logger.log(Level.INFO, "...polling server for forwarded requests");
 		IssueReceiptRequest request = this.getForwarded();
 		if(request != null) {
@@ -123,6 +122,33 @@ public class MockDepositor implements Runnable {
 			for(byte[] newCommitment : newCommitments) {
 				int newCommitmentNumber = this.currentCommitmentNumber + 1;
 				logger.log(Level.INFO, "...new commitment found asking for proof");
+				boolean result = this.checkCommitment(newCommitment, newCommitmentNumber);
+				this.currentCommitmentNumber = newCommitmentNumber;
+				this.currentCommitment = newCommitment;
+			}
+		}
+	}
+	/**
+	 * Periodically the mock depositor polls the serve and approves any requests
+	 */
+	@Override
+	public void run() {
+		logger.log(Level.INFO, "...polling server for forwarded requests");
+		IssueReceiptRequest request = this.getForwarded();
+		if(request != null) {
+//			logger.log(Level.INFO, "...request recieved, approving");
+			IssueReceiptRequest approvedRequest = this.approveRequestAndApply(request);
+//			logger.log(Level.INFO, "...submitting approved request to server");
+			this.submitApprovedRequest(approvedRequest);
+		}
+//		logger.log(Level.INFO, "...polling sever for new commitments");
+		List<byte[]> commitments  = this.getCommitments();
+		// get the new commitments if any
+		List<byte[]> newCommitments = commitments.subList(this.currentCommitmentNumber+1, commitments.size());
+		if(newCommitments.size() > 0) {
+			for(byte[] newCommitment : newCommitments) {
+				int newCommitmentNumber = this.currentCommitmentNumber + 1;
+//				logger.log(Level.INFO, "...new commitment found asking for proof");
 				boolean result = this.checkCommitment(newCommitment, newCommitmentNumber);
 				this.currentCommitmentNumber = newCommitmentNumber;
 				this.currentCommitment = newCommitment;
@@ -186,19 +212,20 @@ public class MockDepositor implements Runnable {
 	}
 	
 	private IssueReceiptRequest approveRequestAndApply(IssueReceiptRequest request) {
-		logger.log(Level.INFO, "...approving request: "+request);
+//		logger.log(Level.INFO, "...approving request: "+request);
+		this.activity.handleReceiptIssue(request);
 		Receipt r = request.getReceipt();
 		this.adsData.add(r);
 		byte[] witness = CryptographicUtils.witnessReceipt(r);
 		this.ads.insert(witness);
 		byte[] newRoot = this.ads.commitment();
-		logger.log(Level.INFO, "...NEW ADS ROOT: "+Utils.byteArrayAsHexString(newRoot));
+//		logger.log(Level.INFO, "...NEW ADS ROOT: "+Utils.byteArrayAsHexString(newRoot));
 		byte[] sig = CryptographicSignature.sign(newRoot, this.account.getPrivateKey());
 		return request.toBuilder().setSignatureDepositor(ByteString.copyFrom(sig)).build();
 	}
 	
 	private boolean submitApprovedRequest(IssueReceiptRequest request) {
-		logger.log(Level.INFO, "...submitting request to server: "+request);
+//		logger.log(Level.INFO, "...submitting request to server: "+request);
 		assert request.getSignatureDepositor().toByteArray() != null;
 		assert request.getSignatureWarehouse().toByteArray() != null;
 		SubmitRequest requestToSend = SubmitRequest.newBuilder()
@@ -206,7 +233,7 @@ public class MockDepositor implements Runnable {
 				.build();
 		SubmitResponse response = this.blockingStub.submit(requestToSend);
 		boolean accepted = response.getAccepted();
-		logger.log(Level.INFO,"...accepted? - "+accepted);
+//		logger.log(Level.INFO,"...accepted? - "+accepted);
 		return accepted;
 	}
 	
@@ -240,36 +267,5 @@ public class MockDepositor implements Runnable {
 		}
 	}
 
-	
-	public static void main(String[] args) {
-		String base = System.getProperty("user.dir")  + "/demos/";
-		PKIDirectory pki = new PKIDirectory(base+"pki/");
-		String host = "127.0.0.1";
-		int port = 50051;
-		/**
-		 * Alice: 59d6dd79-4bbe-4043-ba3e-e2a91e2376ae
-		 * Bob: b132bbfa-98bc-4e5d-b32d-f78d603600f5
-		 * Warehouse: 2cd00d43-bf5c-4728-9323-d2ea0092ed36
-		 */
-		Account alice = pki.getAccount("59d6dd79-4bbe-4043-ba3e-e2a91e2376ae");
-		MockDepositor aliceClient = new MockDepositor(alice, host, port);
-		
-		// create a thread that polls the server and automatically approves any requests
-		ScheduledExecutorService exec = Executors.newSingleThreadScheduledExecutor();
-		exec.scheduleAtFixedRate(aliceClient, 0, 5, TimeUnit.SECONDS);
-		Scanner sc = new Scanner(System.in);
-		sc.nextLine();
-		System.out.println("Press enter to shutdown");
-		sc.close();
-		System.out.println("shutdown");
-		try {
-			aliceClient.shutdown();
-			exec.shutdown();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-			throw new RuntimeException("something went wrong trying to shutdown");
-		}
-	}
-	
 	
 }

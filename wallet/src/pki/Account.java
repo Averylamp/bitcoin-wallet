@@ -9,9 +9,14 @@ import java.io.Serializable;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 import crpyto.CryptographicSignature;
 
@@ -40,9 +45,18 @@ public class Account implements Serializable, Comparable<Account> {
 		// along with pubKeys
 		KeyPair keys = CryptographicSignature.generateNewKeyPair();
 		this.pubKey = keys.getPublic();
-		this.privKey = keys.getPrivate();
-		
+		this.privKey = keys.getPrivate();		
 		this.adsKeys = new HashSet<>();
+	}
+	
+	public Account(String firstName, String lastName, UUID uuid, 
+			PublicKey pubKey, PrivateKey privKey, Set<byte[]> adsIds) {
+		this.firstName = firstName;
+		this.lastName = lastName;
+		this.id = uuid;
+		this.pubKey = pubKey;
+		this.privKey = privKey;
+		this.adsKeys = adsIds;
 	}
 	
 	public void addADSKey(byte[] adsKey) {
@@ -123,6 +137,43 @@ public class Account implements Serializable, Comparable<Account> {
 		}	
 	}
 	
+	public serialization.generated.MptSerialization.Account serialize(){
+		ArrayList<ByteString> allADSIds = new ArrayList<ByteString>();
+		for (byte[] b: this.adsKeys){
+			allADSIds.add(ByteString.copyFrom(b));
+		}
+		serialization.generated.MptSerialization.Account msg = serialization.generated.MptSerialization.Account.newBuilder()
+				.setFirstName(this.firstName)
+				.setLastName(this.lastName)
+				.setUuid(this.id.toString())
+				.setEncodedPubkey(ByteString.copyFrom(this.pubKey.getEncoded()))
+				.setEncodedPrivkey(ByteString.copyFrom(this.privKey.getEncoded()))
+				.addAllAdsIds(allADSIds)
+				.build();
+		return msg;
+	}
+	
+	public static Account fromBytes(byte[] asBytes) {
+		try {
+			serialization.generated.MptSerialization.Account account = 
+					serialization.generated.MptSerialization.Account.parseFrom(asBytes);
+			PublicKey pubKey = CryptographicSignature.loadPublickKey(
+					account.getEncodedPubkey().toByteArray());
+			PrivateKey privKey = CryptographicSignature.loadPrivateKey(
+					account.getEncodedPrivkey().toByteArray());	
+			Set<byte[]> adsIds = new HashSet<>();
+			for(ByteString adsId : account.getAdsIdsList()) {
+				adsIds.add(adsId.toByteArray());
+			}
+			UUID id = UUID.fromString(account.getUuid());
+			return new Account(account.getFirstName(), account.getLastName(),
+					id, pubKey, privKey, adsIds);
+		} catch (InvalidProtocolBufferException e) {
+			e.printStackTrace();
+			throw new RuntimeException(e.getMessage());
+		}
+	}
+	
 	@Override
 	public boolean equals(Object obj) {
 		if(obj instanceof Account) {
@@ -134,7 +185,14 @@ public class Account implements Serializable, Comparable<Account> {
 	
 	@Override
 	public String toString() {
-		return "<"+this.id.toString()+">";
+		String returnStr = "";
+		returnStr += "id: " + this.id + "\n";
+		returnStr += "firstName: " + this.firstName + "\n";
+		returnStr += "lastName: " + this.lastName + "\n";
+		returnStr += "pubKey: " + this.pubKey + "\n";
+		returnStr += "privKey: " + this.privKey + "\n";
+		returnStr += "adsKeys: " + this.adsKeys + "\n";
+		return returnStr;
 	}
 
 	@Override

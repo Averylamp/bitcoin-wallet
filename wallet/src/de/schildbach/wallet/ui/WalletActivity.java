@@ -42,6 +42,9 @@ import de.schildbach.wallet.ui.send.SweepWalletActivity;
 import de.schildbach.wallet.util.CrashReporter;
 import de.schildbach.wallet.util.Nfc;
 import de.schildbach.wallet.util.OnFirstPreDraw;
+import demo.MockDepositor;
+import io.grpc.bverify.IssueReceiptRequest;
+import pki.Account;
 
 import android.animation.Animator;
 import android.animation.AnimatorInflater;
@@ -56,6 +59,7 @@ import android.arch.lifecycle.MutableLiveData;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
+import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LayerDrawable;
@@ -66,10 +70,22 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.support.v4.app.FragmentManager;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Andreas Schildbach
@@ -214,6 +230,89 @@ public final class WalletActivity extends AbstractWalletActivity {
         final FragmentManager fragmentManager = getSupportFragmentManager();
         MaybeMaintenanceFragment.add(fragmentManager);
         AlertDialogsFragment.add(fragmentManager);
+
+        setupDepositor();
+
+    }
+
+    MockDepositor aliceClient;
+    public void setupDepositor(){
+
+        String base = "/demos/";
+        ArrayList<InputStream> listOfFileInputStream = new ArrayList<>();
+
+        try {
+            String host = "hubris.media.mit.edu";
+            int port = 50051;
+            AssetManager am = getAssets();
+//            String fullFilename = "demos/pki/" + filename;
+            InputStream inputStream = am.open("Alice");
+            File f = createFileFromInputStream(inputStream, "Alice");
+            FileInputStream fis = new FileInputStream(f);
+            byte[] data = new byte[(int) f.length()];
+            fis.read(data);
+            fis.close();
+            Account alice = Account.fromBytes(data);
+            aliceClient = new MockDepositor(alice, host, port,  this);
+            // create a thread that polls the server and automatically approves any requests
+            ScheduledExecutorService exec = Executors.newSingleThreadScheduledExecutor();
+            exec.scheduleAtFixedRate(aliceClient, 0, 5, TimeUnit.SECONDS);
+
+        }catch (Exception e){
+            Log.d("Exception", e.getLocalizedMessage());
+            e.printStackTrace();
+        }
+
+
+//        PKIDirectory pki = new PKIDirectory(listOfFileInputStream);
+
+        /**
+         * Alice: 59d6dd79-4bbe-4043-ba3e-e2a91e2376ae
+         * Bob: b132bbfa-98bc-4e5d-b32d-f78d603600f5
+         * Warehouse: 2cd00d43-bf5c-4728-9323-d2ea0092ed36
+         */
+
+//
+//
+//
+//        Scanner sc = new Scanner(System.in);
+//        sc.nextLine();
+//        System.out.println("Press enter to shutdown");
+//        sc.close();
+//        System.out.println("shutdown");
+//        try {
+//            aliceClient.shutdown();
+//            exec.shutdown();
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//            throw new RuntimeException("something went wrong trying to shutdown");
+//        }
+    }
+
+
+
+    private File createFileFromInputStream(InputStream inputStream, String filename) {
+
+        try{
+            File f = new File(getFilesDir(), filename);
+            OutputStream outputStream = new FileOutputStream(f);
+            byte buffer[] = new byte[1024];
+            int length = 0;
+
+            while((length=inputStream.read(buffer)) > 0) {
+                outputStream.write(buffer,0,length);
+            }
+
+            outputStream.close();
+            inputStream.close();
+
+            return f;
+        }catch (IOException e) {
+            e.printStackTrace();
+            //Logging exception
+        }
+
+        return null;
     }
 
     @Override
@@ -506,7 +605,7 @@ public final class WalletActivity extends AbstractWalletActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    public void handleReceiptIssue(Receipt receipt){
+    public void handleReceiptIssue(IssueReceiptRequest receipt){
         Intent receiptIssueIntent = new Intent(this, ReceiptIssueActivity.class);
         receiptIssueIntent.putExtra("receipt", receipt);
         startActivity(receiptIssueIntent);

@@ -21,9 +21,7 @@ import static io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall;
  *	API Interface Exported by the Server
  * </pre>
  */
-//@javax.annotation.Generated(
-//    value = "by gRPC proto compiler (version 1.11.0)",
-//    comments = "Source: protos/api.proto")
+
 public final class BVerifyServerAPIGrpc {
 
   private BVerifyServerAPIGrpc() {}

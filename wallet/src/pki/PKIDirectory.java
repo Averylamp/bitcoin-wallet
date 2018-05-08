@@ -1,6 +1,19 @@
 package pki;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
+import android.os.Environment;
+import android.support.v4.content.ContextCompat;
+import android.util.Log;
+
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,22 +39,50 @@ public class PKIDirectory {
 	private final Map<UUID, Account> lookupTable;
 	private final List<UUID> uuids; 
 	
-	public PKIDirectory(String dir) {
+	public PKIDirectory(List<InputStream> listOfFiles) {
+
+
 		this.lookupTable = new HashMap<>();
 		this.uuids = new ArrayList<>();
-		File folder = new File(dir);
-		File[] listOfFiles = folder.listFiles();
-		for(File f : listOfFiles) {
-			if(f.isFile()) {
-				Account a = Account.loafFromFile(f);
-				if(a != null) {
-					this.uuids.add(a.getId());
-					this.lookupTable.put(a.getId(), a);
-				}
-			}
-		}
+//
+//        for(InputStream f : listOfFiles) {
+//            if(f != null) {
+//                Account a = Account.loafFromFile(f);
+//                if(a != null) {
+//                    this.uuids.add(a.getId());
+//                    this.lookupTable.put(a.getId(), a);
+//                }
+//            }
+//        }
+
 	}
-	
+
+
+
+	private File createFileFromInputStream(InputStream inputStream) {
+
+		try{
+			File f = new File("new FilePath");
+			OutputStream outputStream = new FileOutputStream(f);
+			byte buffer[] = new byte[1024];
+			int length = 0;
+
+			while((length=inputStream.read(buffer)) > 0) {
+				outputStream.write(buffer,0,length);
+			}
+
+			outputStream.close();
+			inputStream.close();
+
+			return f;
+		}catch (IOException e) {
+		    e.printStackTrace();
+			//Logging exception
+		}
+
+		return null;
+	}
+
 	public Account getAccount(UUID id) {
 		return this.lookupTable.get(id);
 	}

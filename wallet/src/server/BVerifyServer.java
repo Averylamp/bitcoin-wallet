@@ -78,7 +78,7 @@ public class BVerifyServer {
 	
 
 	public BVerifyServer(String base) {
-		this.pki = new PKIDirectory(base + "pki/");
+		this.pki = new PKIDirectory( null);
 		logger.log(Level.INFO, "...pki loaded");
 
 		// setup the components
