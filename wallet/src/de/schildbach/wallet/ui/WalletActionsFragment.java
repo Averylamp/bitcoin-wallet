@@ -53,7 +53,7 @@ public final class WalletActionsFragment extends Fragment {
             @Override
             public void onClick(final View v) {
 //                activity.handleRequestCoins();
-                activity.handleReceiptIssue(Receipt.createDemoReceipt());
+//                activity.handleReceiptIssue(Receipt.createDemoReceipt());
             }
         });
 

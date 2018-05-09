@@ -103,37 +103,37 @@ public class WalletTransactionsFragment extends Fragment implements Transactions
         setHasOptionsMenu(true);
 
         viewModel = ViewModelProviders.of(this).get(WalletTransactionsViewModel.class);
-        viewModel.transactions.observe(this, new Observer<Set<Transaction>>() {
-            @Override
-            public void onChanged(final Set<Transaction> transactions) {
-                if (transactions.isEmpty()) {
-                    viewGroup.setDisplayedChild(1);
+//        viewModel.transactions.observe(this, new Observer<Set<Transaction>>() {
+//            @Override
+//            public void onChanged(final Set<Transaction> transactions) {
+//                if (transactions.isEmpty()) {
+//                    viewGroup.setDisplayedChild(1);
+//
+//                    final WalletTransactionsViewModel.Direction direction = viewModel.direction.getValue();
+//                    final SpannableStringBuilder emptyText = new SpannableStringBuilder(
+//                            getString(direction == WalletTransactionsViewModel.Direction.SENT
+//                                    ? R.string.wallet_transactions_fragment_empty_text_sent
+//                                    : R.string.wallet_transactions_fragment_empty_text_received));
+//                    emptyText.setSpan(new StyleSpan(Typeface.BOLD), 0, emptyText.length(),
+//                            SpannableStringBuilder.SPAN_POINT_MARK);
+//                    if (direction != WalletTransactionsViewModel.Direction.SENT)
+//                        emptyText.append("\n\n")
+//                                .append(getString(R.string.wallet_transactions_fragment_empty_text_howto));
+//                    emptyView.setText(emptyText);
+//                } else {
+//                    viewGroup.setDisplayedChild(2);
+//                }
+//            }
+//        });
+//        viewModel.list.observe(this, new Observer<List<ListItem>>() {
+//            @Override
+//            public void onChanged(final List<ListItem> listItems) {
+//                adapter.submitList(listItems);
+//                ViewModelProviders.of(activity).get(WalletActivity.ViewModel.class).transactionsLoadingFinished();
+//            }
+//        });
 
-                    final WalletTransactionsViewModel.Direction direction = viewModel.direction.getValue();
-                    final SpannableStringBuilder emptyText = new SpannableStringBuilder(
-                            getString(direction == WalletTransactionsViewModel.Direction.SENT
-                                    ? R.string.wallet_transactions_fragment_empty_text_sent
-                                    : R.string.wallet_transactions_fragment_empty_text_received));
-                    emptyText.setSpan(new StyleSpan(Typeface.BOLD), 0, emptyText.length(),
-                            SpannableStringBuilder.SPAN_POINT_MARK);
-                    if (direction != WalletTransactionsViewModel.Direction.SENT)
-                        emptyText.append("\n\n")
-                                .append(getString(R.string.wallet_transactions_fragment_empty_text_howto));
-                    emptyView.setText(emptyText);
-                } else {
-                    viewGroup.setDisplayedChild(2);
-                }
-            }
-        });
-        viewModel.list.observe(this, new Observer<List<ListItem>>() {
-            @Override
-            public void onChanged(final List<ListItem> listItems) {
-                adapter.submitList(listItems);
-                ViewModelProviders.of(activity).get(WalletActivity.ViewModel.class).transactionsLoadingFinished();
-            }
-        });
-
-        adapter = new TransactionsAdapter(activity, application.maxConnectedPeers(), this);
+//        adapter = new TransactionsAdapter(activity, application.maxConnectedPeers(), this);
     }
 
     @Override

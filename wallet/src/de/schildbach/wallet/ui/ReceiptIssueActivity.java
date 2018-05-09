@@ -21,16 +21,20 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import de.schildbach.wallet.R;
+import demo.MockDepositor;
+import io.grpc.bverify.IssueReceiptRequest;
+import io.grpc.bverify.Receipt;
 
 /**
  * @author Andreas Schildbach
  */
 public final class ReceiptIssueActivity extends AbstractWalletActivity {
 
-    private Receipt receiptToVerify;
+    private IssueReceiptRequest receiptToVerify;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -38,12 +42,46 @@ public final class ReceiptIssueActivity extends AbstractWalletActivity {
 
         setContentView(R.layout.receipt_issue_dialog);
 
-        receiptToVerify = (Receipt) getIntent().getExtras().getParcelable("receipt");
+        receiptToVerify = (IssueReceiptRequest) getIntent().getSerializableExtra("receipt");
 
 
         final TextView descriptionTextView = findViewById(R.id.receipt_issue_request_information);
-        descriptionTextView.setText(receiptToVerify.toFullDetailString());
+        descriptionTextView.setText(receiptInfoString(receiptToVerify));
 
+        final Button acceptReceipt  = findViewById(R.id.accept_receipt_button);
+        acceptReceipt.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                IssueReceiptRequest signedReceiptRequest = MockDepositor.approveRequestAndApply(receiptToVerify);
+                MockDepositor.submitApprovedRequest(signedReceiptRequest);
+                finish();// Closing Activity
+            }
+        });
+
+        final Button declineReceipt = findViewById(R.id.decline_receipt_button);
+        declineReceipt.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                finish();// Closing Activity
+            }
+        });
+    }
+
+    public String receiptInfoString(IssueReceiptRequest receiptIssue){
+        String result = "";
+        Receipt receipt = receiptIssue.getReceipt();
+        result += "Warehouse: " + receipt.getWarehouseId() + "\n";
+        result += "Date Created: " + receipt.getDate() + "\n";
+        result += "Category: " + receipt.getCategory() + "\n";
+        result += "Depositor: " + receipt.getDepositorId() + "\n";
+        result += "Accountant: " + receipt.getAccountant() + "\n";
+        result += "Insurance: " + receipt.getInsurance() + "\n";
+        result += "Weight: " + receipt.getWeight() + "\n";
+        result += "Volume: " + receipt.getVolume() + "\n";
+        result += "Humidity: " + receipt.getHumidity() + "\n";
+        result += "Price: " + receipt.getPrice()+ "\n";
+        result += "Extra Details: " + receipt.getDetails() + "\n";
+        return result;
     }
 
     @Override

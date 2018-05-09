@@ -262,7 +262,7 @@ public final class WalletActivity extends AbstractWalletActivity {
             Log.d("Exception", e.getLocalizedMessage());
             e.printStackTrace();
         }
-
+        log.info("Finished initializing alice");
 
 //        PKIDirectory pki = new PKIDirectory(listOfFileInputStream);
 

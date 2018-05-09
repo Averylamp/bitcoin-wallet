@@ -1,21 +1,15 @@
 package demo;
-
-import android.util.Log;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Scanner;
 import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import com.google.protobuf.ByteString;
+
+import org.slf4j.LoggerFactory;
 
 import crpyto.CryptographicSignature;
 import crpyto.CryptographicUtils;
@@ -43,85 +37,83 @@ import mpt.dictionary.MPTDictionaryPartial;
 import mpt.set.AuthenticatedSetServer;
 import mpt.set.MPTSetFull;
 import pki.Account;
-import pki.PKIDirectory;
-import server.BVerifyServer;
 
 public class MockDepositor implements Runnable {
-	private static final Logger logger = Logger.getLogger(BVerifyServer.class.getName());
-
-
-	private final Account account;
+	private static final org.slf4j.Logger logger = LoggerFactory.getLogger(MockDepositor.class);
+	private static Account account = null;
 	
 	// data 
 	private final byte[] adsKey;
-	private final Set<Receipt> adsData;
-	private final AuthenticatedSetServer ads;
+	private static final Set<Receipt> adsData = new HashSet<>();
+	private static final AuthenticatedSetServer ads = new MPTSetFull();
 	
 	// witnessing 
 	private byte[] currentCommitment;
 	private int currentCommitmentNumber;
 	
 	// gRPC
-	private final ManagedChannel channel;
-	private final BVerifyServerAPIBlockingStub blockingStub;
+	private static ManagedChannel channel = null;
+	private static BVerifyServerAPIBlockingStub blockingStub = null;
 
 	private final WalletActivity activity;
 
 	public MockDepositor(Account a, String host, int port, WalletActivity activity) {
 		this.activity = activity;
-		logger.log(Level.INFO, "...loading mock depositor connected to server on host: "+host+" port: "+port);
-	   
-		this.channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
-	    this.blockingStub = BVerifyServerAPIGrpc.newBlockingStub(channel);
+		logger.info( "...loading mock depositor connected to server on host: "+host+" port: "+port);
 
-	    this.account = a;
-		this.ads = new MPTSetFull();
-		this.adsData = new HashSet<>();
+		MockDepositor.channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
+		MockDepositor.blockingStub = BVerifyServerAPIGrpc.newBlockingStub(channel);
+
+	    MockDepositor.account = a;
+//		this.ads = new MPTSetFull();
+//		this.adsData = new HashSet<>();
 		assert a.getADSKeys().size() == 1;
 		this.adsKey = a.getADSKeys().iterator().next();
 
-		Log.d("asdf", "...loading mock depositor "+a.getFirstName());
-		logger.log(Level.INFO, "...cares about ads: "+Utils.byteArrayAsHexString(this.adsKey));
-		
-		logger.log(Level.INFO, "...getting commitments from server");
+		logger.info("...loading mock depositor "+a.getFirstName());
+		logger.info( "...cares about ads: "+Utils.byteArrayAsHexString(this.adsKey));
+
+		logger.info( "...getting commitments from server");
 		List<byte[]> commitments = this.getCommitments();
 		this.currentCommitmentNumber = commitments.size()-1;
 		this.currentCommitment = commitments.get(this.currentCommitmentNumber);
 		
-		logger.log(Level.INFO, "...current commitment: #"+this.currentCommitmentNumber+" - "+
+		logger.info( "...current commitment: #"+this.currentCommitmentNumber+" - "+
 				Utils.byteArrayAsHexString(this.currentCommitment));
-		
-		logger.log(Level.INFO, "...asking for data from the server");
+
+		logger.info( "...asking for data from the server");
 		List<Receipt> receipts = this.getDataRequest(this.adsKey, this.currentCommitmentNumber);
 		for(Receipt r : receipts) {
-//			logger.log(Level.INFO, "...adding receipt: "+r);
+			logger.info( "...adding receipt: ");
 			this.adsData.add(r);
 			byte[] receiptWitness = CryptographicUtils.witnessReceipt(r);
 			this.ads.insert(receiptWitness);
 		}
 		
-		logger.log(Level.INFO, "...asking for a proof, checking latest commitment");
+		logger.info( "...asking for a proof, checking latest commitment");
 		this.checkCommitment(this.currentCommitment, this.currentCommitmentNumber);
-		logger.log(Level.INFO, "...setup complete!");
+		logger.info( "...setup complete!");
 
 	}
 	public void checkForCommitments(){
-		logger.log(Level.INFO, "...polling server for forwarded requests");
+		logger.info( "...polling server for forwarded requests");
 		IssueReceiptRequest request = this.getForwarded();
 		if(request != null) {
-			logger.log(Level.INFO, "...request recieved, approving");
-			IssueReceiptRequest approvedRequest = this.approveRequestAndApply(request);
-			logger.log(Level.INFO, "...submitting approved request to server");
-			this.submitApprovedRequest(approvedRequest);
+			logger.info( "...request recieved, sending to UI");
+			sendApprovalRequestToUI(request);
+
+//			IssueReceiptRequest approvedRequest = this.approveRequestAndApply(request);
+//			logger.info( "...submitting approved request to server");
+//			this.submitApprovedRequest(approvedRequest);
 		}
-		logger.log(Level.INFO, "...polling sever for new commitments");
+		logger.info( "...polling sever for new commitments");
 		List<byte[]> commitments  = this.getCommitments();
 		// get the new commitments if any
 		List<byte[]> newCommitments = commitments.subList(this.currentCommitmentNumber+1, commitments.size());
 		if(newCommitments.size() > 0) {
 			for(byte[] newCommitment : newCommitments) {
 				int newCommitmentNumber = this.currentCommitmentNumber + 1;
-				logger.log(Level.INFO, "...new commitment found asking for proof");
+				logger.info( "...new commitment found asking for proof");
 				boolean result = this.checkCommitment(newCommitment, newCommitmentNumber);
 				this.currentCommitmentNumber = newCommitmentNumber;
 				this.currentCommitment = newCommitment;
@@ -133,22 +125,24 @@ public class MockDepositor implements Runnable {
 	 */
 	@Override
 	public void run() {
-		logger.log(Level.INFO, "...polling server for forwarded requests");
+		logger.info( "...polling server for forwarded requests");
 		IssueReceiptRequest request = this.getForwarded();
 		if(request != null) {
-//			logger.log(Level.INFO, "...request recieved, approving");
-			IssueReceiptRequest approvedRequest = this.approveRequestAndApply(request);
-//			logger.log(Level.INFO, "...submitting approved request to server");
-			this.submitApprovedRequest(approvedRequest);
+			logger.info( "...request recieved, sending to UI");
+			sendApprovalRequestToUI(request);
+
+//			IssueReceiptRequest approvedRequest = this.approveRequestAndApply(request);
+////			logger.info( "...submitting approved request to server");
+//			this.submitApprovedRequest(approvedRequest);
 		}
-//		logger.log(Level.INFO, "...polling sever for new commitments");
+//		logger.info( "...polling sever for new commitments");
 		List<byte[]> commitments  = this.getCommitments();
 		// get the new commitments if any
 		List<byte[]> newCommitments = commitments.subList(this.currentCommitmentNumber+1, commitments.size());
 		if(newCommitments.size() > 0) {
 			for(byte[] newCommitment : newCommitments) {
 				int newCommitmentNumber = this.currentCommitmentNumber + 1;
-//				logger.log(Level.INFO, "...new commitment found asking for proof");
+//				logger.info( "...new commitment found asking for proof");
 				boolean result = this.checkCommitment(newCommitment, newCommitmentNumber);
 				this.currentCommitmentNumber = newCommitmentNumber;
 				this.currentCommitment = newCommitment;
@@ -210,55 +204,60 @@ public class MockDepositor implements Runnable {
 		}
 		return null;
 	}
-	
-	private IssueReceiptRequest approveRequestAndApply(IssueReceiptRequest request) {
-//		logger.log(Level.INFO, "...approving request: "+request);
-		this.activity.handleReceiptIssue(request);
+
+	private void sendApprovalRequestToUI(IssueReceiptRequest request){
+		activity.handleReceiptIssue(request);
+	}
+
+	public static IssueReceiptRequest approveRequestAndApply(IssueReceiptRequest request) {
+//		logger.info( "...approving request: "+request);
 		Receipt r = request.getReceipt();
-		this.adsData.add(r);
+		MockDepositor.adsData.add(r);
 		byte[] witness = CryptographicUtils.witnessReceipt(r);
-		this.ads.insert(witness);
-		byte[] newRoot = this.ads.commitment();
-//		logger.log(Level.INFO, "...NEW ADS ROOT: "+Utils.byteArrayAsHexString(newRoot));
-		byte[] sig = CryptographicSignature.sign(newRoot, this.account.getPrivateKey());
+		MockDepositor.ads.insert(witness);
+		byte[] newRoot = MockDepositor.ads.commitment();
+//		logger.info( "...NEW ADS ROOT: "+Utils.byteArrayAsHexString(newRoot));
+		byte[] sig = CryptographicSignature.sign(newRoot, MockDepositor.account.getPrivateKey());
 		return request.toBuilder().setSignatureDepositor(ByteString.copyFrom(sig)).build();
 	}
+
+
 	
-	private boolean submitApprovedRequest(IssueReceiptRequest request) {
-//		logger.log(Level.INFO, "...submitting request to server: "+request);
+	public static boolean submitApprovedRequest(IssueReceiptRequest request) {
+//		logger.info( "...submitting request to server: "+request);
 		assert request.getSignatureDepositor().toByteArray() != null;
 		assert request.getSignatureWarehouse().toByteArray() != null;
 		SubmitRequest requestToSend = SubmitRequest.newBuilder()
 				.setRequest(request)
 				.build();
-		SubmitResponse response = this.blockingStub.submit(requestToSend);
+		SubmitResponse response = MockDepositor.blockingStub.submit(requestToSend);
 		boolean accepted = response.getAccepted();
-//		logger.log(Level.INFO,"...accepted? - "+accepted);
+//		logger.info("...accepted? - "+accepted);
 		return accepted;
 	}
 	
 	private boolean checkCommitment(final byte[] commitment, final int commitmentNumber) {
-		logger.log(Level.INFO, "...checking commtiment : #"+commitmentNumber+
+		logger.info( "...checking commtiment : #"+commitmentNumber+
 				" | "+Utils.byteArrayAsHexString(commitment));
-		logger.log(Level.INFO, "...asking for proof from the server");
+		logger.info( "...asking for proof from the server");
 		MPTDictionaryPartial mpt = this.getPath(Arrays.asList(this.adsKey), commitmentNumber);
-		logger.log(Level.INFO, "...checking proof");
+		logger.info( "...checking proof");
 		// check that the auth proof is correct
 		try {
-			logger.log(Level.INFO, "...checking that mapping is correct");
+			logger.info( "...checking that mapping is correct");
 			if(!Arrays.equals(mpt.get(this.adsKey), this.ads.commitment())){
-				logger.log(Level.WARNING, "...MAPPING DOES NOT MATCH");
+				logger.warn( "...MAPPING DOES NOT MATCH");
 				System.err.println("MAPPING DOES NOT MATCH");
 				return false;
 			}
-			logger.log(Level.INFO, "...checking that commitment matches");
+			logger.info( "...checking that commitment matches");
 			System.out.println(Utils.byteArrayAsHexString(mpt.commitment()));
 			System.out.println(Utils.byteArrayAsHexString(commitment));
 			if(!Arrays.equals(commitment, mpt.commitment())) {
-				logger.log(Level.WARNING, "...COMMITMENT DOES NOT MATCH");
+				logger.warn( "...COMMITMENT DOES NOT MATCH");
 				System.err.println("COMMITMENT DOES NOT MATCH");
 			}
-			logger.log(Level.INFO, "...commitment accepted");
+			logger.info( "...commitment accepted");
 			return true;
 		} catch (InsufficientAuthenticationDataException e) {
 			e.printStackTrace();

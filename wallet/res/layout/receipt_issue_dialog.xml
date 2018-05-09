@@ -11,7 +11,7 @@
         android:gravity="center_vertical|center"
         android:text="Receipt Issue Request"
         android:textAlignment="center"
-        android:textSize="20sp" />
+        android:textSize="24sp" />
 
     <TextView
         android:id="@+id/receipt_issue_request_information"
@@ -27,14 +27,14 @@
         android:orientation="horizontal">
 
         <Button
-            android:id="@+id/button2"
+            android:id="@+id/accept_receipt_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Accept" />
 
         <Button
-            android:id="@+id/button3"
+            android:id="@+id/decline_receipt_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
