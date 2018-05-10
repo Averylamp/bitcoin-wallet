@@ -300,4 +300,5 @@ public final class WalletBalanceFragment extends Fragment {
 //        viewBalanceLocal.setVisibility(View.INVISIBLE);
 //        viewBalanceWarning.setVisibility(View.INVISIBLE);
     }
+
 }

@@ -58,13 +58,11 @@ import com.google.common.util.concurrent.SettableFuture;
 import bverify.Client;
 import bverify.DecompressibleInputStream;
 import demo.MockDepositor;
-import demo.MockWarehouse;
 import de.schildbach.wallet.service.BlockchainService;
 import de.schildbach.wallet.util.Bluetooth;
 import de.schildbach.wallet.util.CrashReporter;
 import de.schildbach.wallet.util.Toast;
 import de.schildbach.wallet.util.WalletUtils;
-import demo.MockWarehouse;
 import pki.Account;
 import pki.PKIDirectory;
 
@@ -157,14 +155,6 @@ public class WalletApplication extends Application {
 
     }
 
-
-
-    public Client getBVerifyClient(){
-        if (client == null) {
-            client = new Client("test account");
-        }
-        return client;
-    }
 
     public synchronized Configuration getConfiguration() {
         if (config == null)

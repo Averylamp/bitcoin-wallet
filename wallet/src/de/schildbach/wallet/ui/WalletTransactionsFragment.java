@@ -17,6 +17,7 @@
 
 package de.schildbach.wallet.ui;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -38,6 +39,8 @@ import de.schildbach.wallet.ui.TransactionsAdapter.ListItem;
 import de.schildbach.wallet.ui.send.RaiseFeeDialogFragment;
 import de.schildbach.wallet.util.Qr;
 import de.schildbach.wallet.util.WalletUtils;
+import demo.MockDepositor;
+import io.grpc.bverify.Receipt;
 
 import android.app.admin.DevicePolicyManager;
 import android.arch.lifecycle.Observer;
@@ -61,6 +64,8 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.PopupMenu.OnMenuItemClickListener;
 import android.widget.TextView;
@@ -76,10 +81,13 @@ public class WalletTransactionsFragment extends Fragment implements Transactions
     private DevicePolicyManager devicePolicyManager;
 
     private ViewAnimator viewGroup;
-    private TextView emptyView;
+    private ListView receiptListView;
     private RecyclerView recyclerView;
     private TransactionsAdapter adapter;
     private MenuItem filterMenuItem;
+
+    public static ArrayAdapter receiptAdapter = null;
+    public static ArrayList<Receipt> receiptList = new ArrayList<Receipt>();
 
     private WalletTransactionsViewModel viewModel;
 
@@ -125,15 +133,15 @@ public class WalletTransactionsFragment extends Fragment implements Transactions
 //                }
 //            }
 //        });
-//        viewModel.list.observe(this, new Observer<List<ListItem>>() {
-//            @Override
-//            public void onChanged(final List<ListItem> listItems) {
-//                adapter.submitList(listItems);
-//                ViewModelProviders.of(activity).get(WalletActivity.ViewModel.class).transactionsLoadingFinished();
-//            }
-//        });
+        viewModel.list.observe(this, new Observer<List<ListItem>>() {
+            @Override
+            public void onChanged(final List<ListItem> listItems) {
+                adapter.submitList(listItems);
+                ViewModelProviders.of(activity).get(WalletActivity.ViewModel.class).transactionsLoadingFinished();
+            }
+        });
 
-//        adapter = new TransactionsAdapter(activity, application.maxConnectedPeers(), this);
+        adapter = new TransactionsAdapter(activity, application.maxConnectedPeers(), this);
     }
 
     @Override
@@ -142,9 +150,11 @@ public class WalletTransactionsFragment extends Fragment implements Transactions
         final View view = inflater.inflate(R.layout.wallet_transactions_fragment, container, false);
 
         viewGroup = (ViewAnimator) view.findViewById(R.id.wallet_transactions_group);
-        viewGroup.setDisplayedChild(2); // don't show progress
+        viewGroup.setDisplayedChild(1); // don't show progress
 
-        emptyView = (TextView) view.findViewById(R.id.wallet_transactions_empty);
+        receiptListView = (ListView) view.findViewById(R.id.receipt_list_view);
+        receiptAdapter = new ReceiptArrayAdapter(getContext(), R.layout.receipt_list_item, receiptList);
+        receiptListView.setAdapter(receiptAdapter);
 
         recyclerView = (RecyclerView) view.findViewById(R.id.wallet_transactions_list);
         recyclerView.setHasFixedSize(true);

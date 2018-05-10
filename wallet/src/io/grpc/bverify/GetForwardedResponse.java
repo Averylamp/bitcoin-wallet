@@ -51,15 +51,30 @@ private static final long serialVersionUID = 0L;
           }
           case 10: {
             IssueReceiptRequest.Builder subBuilder = null;
-            if (request_ != null) {
-              subBuilder = request_.toBuilder();
+            if (requestCase_ == 1) {
+              subBuilder = ((IssueReceiptRequest) request_).toBuilder();
             }
-            request_ = input.readMessage(IssueReceiptRequest.parser(), extensionRegistry);
+            request_ =
+                input.readMessage(IssueReceiptRequest.parser(), extensionRegistry);
             if (subBuilder != null) {
-              subBuilder.mergeFrom(request_);
+              subBuilder.mergeFrom((IssueReceiptRequest) request_);
               request_ = subBuilder.buildPartial();
             }
-
+            requestCase_ = 1;
+            break;
+          }
+          case 18: {
+            TransferReceiptRequest.Builder subBuilder = null;
+            if (requestCase_ == 2) {
+              subBuilder = ((TransferReceiptRequest) request_).toBuilder();
+            }
+            request_ =
+                input.readMessage(TransferReceiptRequest.parser(), extensionRegistry);
+            if (subBuilder != null) {
+              subBuilder.mergeFrom((TransferReceiptRequest) request_);
+              request_ = subBuilder.buildPartial();
+            }
+            requestCase_ = 2;
             break;
           }
         }
@@ -86,25 +101,94 @@ private static final long serialVersionUID = 0L;
             GetForwardedResponse.class, Builder.class);
   }
 
-  public static final int REQUEST_FIELD_NUMBER = 1;
-  private IssueReceiptRequest request_;
+  private int requestCase_ = 0;
+  private Object request_;
+  public enum RequestCase
+      implements com.google.protobuf.Internal.EnumLite {
+    ISSUE_RECEIPT(1),
+    TRANSFER_RECEIPT(2),
+    REQUEST_NOT_SET(0);
+    private final int value;
+    private RequestCase(int value) {
+      this.value = value;
+    }
+    /**
+     * @deprecated Use {@link #forNumber(int)} instead.
+     */
+    @Deprecated
+    public static RequestCase valueOf(int value) {
+      return forNumber(value);
+    }
+
+    public static RequestCase forNumber(int value) {
+      switch (value) {
+        case 1: return ISSUE_RECEIPT;
+        case 2: return TRANSFER_RECEIPT;
+        case 0: return REQUEST_NOT_SET;
+        default: return null;
+      }
+    }
+    public int getNumber() {
+      return this.value;
+    }
+  };
+
+  public RequestCase
+  getRequestCase() {
+    return RequestCase.forNumber(
+        requestCase_);
+  }
+
+  public static final int ISSUE_RECEIPT_FIELD_NUMBER = 1;
   /**
-   * <code>.api.IssueReceiptRequest request = 1;</code>
+   * <code>.api.IssueReceiptRequest issue_receipt = 1;</code>
    */
-  public boolean hasRequest() {
-    return request_ != null;
+  public boolean hasIssueReceipt() {
+    return requestCase_ == 1;
   }
   /**
-   * <code>.api.IssueReceiptRequest request = 1;</code>
+   * <code>.api.IssueReceiptRequest issue_receipt = 1;</code>
    */
-  public IssueReceiptRequest getRequest() {
-    return request_ == null ? IssueReceiptRequest.getDefaultInstance() : request_;
+  public IssueReceiptRequest getIssueReceipt() {
+    if (requestCase_ == 1) {
+       return (IssueReceiptRequest) request_;
+    }
+    return IssueReceiptRequest.getDefaultInstance();
   }
   /**
-   * <code>.api.IssueReceiptRequest request = 1;</code>
+   * <code>.api.IssueReceiptRequest issue_receipt = 1;</code>
    */
-  public io.grpc.bverify.IssueReceiptRequestOrBuilder getRequestOrBuilder() {
-    return getRequest();
+  public IssueReceiptRequestOrBuilder getIssueReceiptOrBuilder() {
+    if (requestCase_ == 1) {
+       return (IssueReceiptRequest) request_;
+    }
+    return IssueReceiptRequest.getDefaultInstance();
+  }
+
+  public static final int TRANSFER_RECEIPT_FIELD_NUMBER = 2;
+  /**
+   * <code>.api.TransferReceiptRequest transfer_receipt = 2;</code>
+   */
+  public boolean hasTransferReceipt() {
+    return requestCase_ == 2;
+  }
+  /**
+   * <code>.api.TransferReceiptRequest transfer_receipt = 2;</code>
+   */
+  public TransferReceiptRequest getTransferReceipt() {
+    if (requestCase_ == 2) {
+       return (TransferReceiptRequest) request_;
+    }
+    return TransferReceiptRequest.getDefaultInstance();
+  }
+  /**
+   * <code>.api.TransferReceiptRequest transfer_receipt = 2;</code>
+   */
+  public TransferReceiptRequestOrBuilder getTransferReceiptOrBuilder() {
+    if (requestCase_ == 2) {
+       return (TransferReceiptRequest) request_;
+    }
+    return TransferReceiptRequest.getDefaultInstance();
   }
 
   private byte memoizedIsInitialized = -1;
@@ -119,8 +203,11 @@ private static final long serialVersionUID = 0L;
 
   public void writeTo(com.google.protobuf.CodedOutputStream output)
                       throws java.io.IOException {
-    if (request_ != null) {
-      output.writeMessage(1, getRequest());
+    if (requestCase_ == 1) {
+      output.writeMessage(1, (IssueReceiptRequest) request_);
+    }
+    if (requestCase_ == 2) {
+      output.writeMessage(2, (TransferReceiptRequest) request_);
     }
     unknownFields.writeTo(output);
   }
@@ -130,9 +217,13 @@ private static final long serialVersionUID = 0L;
     if (size != -1) return size;
 
     size = 0;
-    if (request_ != null) {
+    if (requestCase_ == 1) {
       size += com.google.protobuf.CodedOutputStream
-        .computeMessageSize(1, getRequest());
+        .computeMessageSize(1, (IssueReceiptRequest) request_);
+    }
+    if (requestCase_ == 2) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeMessageSize(2, (TransferReceiptRequest) request_);
     }
     size += unknownFields.getSerializedSize();
     memoizedSize = size;
@@ -150,10 +241,20 @@ private static final long serialVersionUID = 0L;
     GetForwardedResponse other = (GetForwardedResponse) obj;
 
     boolean result = true;
-    result = result && (hasRequest() == other.hasRequest());
-    if (hasRequest()) {
-      result = result && getRequest()
-          .equals(other.getRequest());
+    result = result && getRequestCase().equals(
+        other.getRequestCase());
+    if (!result) return false;
+    switch (requestCase_) {
+      case 1:
+        result = result && getIssueReceipt()
+            .equals(other.getIssueReceipt());
+        break;
+      case 2:
+        result = result && getTransferReceipt()
+            .equals(other.getTransferReceipt());
+        break;
+      case 0:
+      default:
     }
     result = result && unknownFields.equals(other.unknownFields);
     return result;
@@ -166,9 +267,17 @@ private static final long serialVersionUID = 0L;
     }
     int hash = 41;
     hash = (19 * hash) + getDescriptor().hashCode();
-    if (hasRequest()) {
-      hash = (37 * hash) + REQUEST_FIELD_NUMBER;
-      hash = (53 * hash) + getRequest().hashCode();
+    switch (requestCase_) {
+      case 1:
+        hash = (37 * hash) + ISSUE_RECEIPT_FIELD_NUMBER;
+        hash = (53 * hash) + getIssueReceipt().hashCode();
+        break;
+      case 2:
+        hash = (37 * hash) + TRANSFER_RECEIPT_FIELD_NUMBER;
+        hash = (53 * hash) + getTransferReceipt().hashCode();
+        break;
+      case 0:
+      default:
     }
     hash = (29 * hash) + unknownFields.hashCode();
     memoizedHashCode = hash;
@@ -299,12 +408,8 @@ private static final long serialVersionUID = 0L;
     }
     public Builder clear() {
       super.clear();
-      if (requestBuilder_ == null) {
-        request_ = null;
-      } else {
-        request_ = null;
-        requestBuilder_ = null;
-      }
+      requestCase_ = 0;
+      request_ = null;
       return this;
     }
 
@@ -327,11 +432,21 @@ private static final long serialVersionUID = 0L;
 
     public GetForwardedResponse buildPartial() {
       GetForwardedResponse result = new GetForwardedResponse(this);
-      if (requestBuilder_ == null) {
-        result.request_ = request_;
-      } else {
-        result.request_ = requestBuilder_.build();
+      if (requestCase_ == 1) {
+        if (issueReceiptBuilder_ == null) {
+          result.request_ = request_;
+        } else {
+          result.request_ = issueReceiptBuilder_.build();
+        }
       }
+      if (requestCase_ == 2) {
+        if (transferReceiptBuilder_ == null) {
+          result.request_ = request_;
+        } else {
+          result.request_ = transferReceiptBuilder_.build();
+        }
+      }
+      result.requestCase_ = requestCase_;
       onBuilt();
       return result;
     }
@@ -373,8 +488,18 @@ private static final long serialVersionUID = 0L;
 
     public Builder mergeFrom(GetForwardedResponse other) {
       if (other == GetForwardedResponse.getDefaultInstance()) return this;
-      if (other.hasRequest()) {
-        mergeRequest(other.getRequest());
+      switch (other.getRequestCase()) {
+        case ISSUE_RECEIPT: {
+          mergeIssueReceipt(other.getIssueReceipt());
+          break;
+        }
+        case TRANSFER_RECEIPT: {
+          mergeTransferReceipt(other.getTransferReceipt());
+          break;
+        }
+        case REQUEST_NOT_SET: {
+          break;
+        }
       }
       this.mergeUnknownFields(other.unknownFields);
       onChanged();
@@ -402,122 +527,292 @@ private static final long serialVersionUID = 0L;
       }
       return this;
     }
+    private int requestCase_ = 0;
+    private Object request_;
+    public RequestCase
+        getRequestCase() {
+      return RequestCase.forNumber(
+          requestCase_);
+    }
 
-    private IssueReceiptRequest request_ = null;
+    public Builder clearRequest() {
+      requestCase_ = 0;
+      request_ = null;
+      onChanged();
+      return this;
+    }
+
+
     private com.google.protobuf.SingleFieldBuilderV3<
-        IssueReceiptRequest, IssueReceiptRequest.Builder, io.grpc.bverify.IssueReceiptRequestOrBuilder> requestBuilder_;
+        IssueReceiptRequest, IssueReceiptRequest.Builder, IssueReceiptRequestOrBuilder> issueReceiptBuilder_;
     /**
-     * <code>.api.IssueReceiptRequest request = 1;</code>
+     * <code>.api.IssueReceiptRequest issue_receipt = 1;</code>
      */
-    public boolean hasRequest() {
-      return requestBuilder_ != null || request_ != null;
+    public boolean hasIssueReceipt() {
+      return requestCase_ == 1;
     }
     /**
-     * <code>.api.IssueReceiptRequest request = 1;</code>
+     * <code>.api.IssueReceiptRequest issue_receipt = 1;</code>
      */
-    public IssueReceiptRequest getRequest() {
-      if (requestBuilder_ == null) {
-        return request_ == null ? IssueReceiptRequest.getDefaultInstance() : request_;
+    public IssueReceiptRequest getIssueReceipt() {
+      if (issueReceiptBuilder_ == null) {
+        if (requestCase_ == 1) {
+          return (IssueReceiptRequest) request_;
+        }
+        return IssueReceiptRequest.getDefaultInstance();
       } else {
-        return requestBuilder_.getMessage();
+        if (requestCase_ == 1) {
+          return issueReceiptBuilder_.getMessage();
+        }
+        return IssueReceiptRequest.getDefaultInstance();
       }
     }
     /**
-     * <code>.api.IssueReceiptRequest request = 1;</code>
+     * <code>.api.IssueReceiptRequest issue_receipt = 1;</code>
      */
-    public Builder setRequest(IssueReceiptRequest value) {
-      if (requestBuilder_ == null) {
+    public Builder setIssueReceipt(IssueReceiptRequest value) {
+      if (issueReceiptBuilder_ == null) {
         if (value == null) {
           throw new NullPointerException();
         }
         request_ = value;
         onChanged();
       } else {
-        requestBuilder_.setMessage(value);
+        issueReceiptBuilder_.setMessage(value);
       }
-
+      requestCase_ = 1;
       return this;
     }
     /**
-     * <code>.api.IssueReceiptRequest request = 1;</code>
+     * <code>.api.IssueReceiptRequest issue_receipt = 1;</code>
      */
-    public Builder setRequest(
+    public Builder setIssueReceipt(
         IssueReceiptRequest.Builder builderForValue) {
-      if (requestBuilder_ == null) {
+      if (issueReceiptBuilder_ == null) {
         request_ = builderForValue.build();
         onChanged();
       } else {
-        requestBuilder_.setMessage(builderForValue.build());
+        issueReceiptBuilder_.setMessage(builderForValue.build());
       }
-
+      requestCase_ = 1;
       return this;
     }
     /**
-     * <code>.api.IssueReceiptRequest request = 1;</code>
+     * <code>.api.IssueReceiptRequest issue_receipt = 1;</code>
      */
-    public Builder mergeRequest(IssueReceiptRequest value) {
-      if (requestBuilder_ == null) {
-        if (request_ != null) {
-          request_ =
-            IssueReceiptRequest.newBuilder(request_).mergeFrom(value).buildPartial();
+    public Builder mergeIssueReceipt(IssueReceiptRequest value) {
+      if (issueReceiptBuilder_ == null) {
+        if (requestCase_ == 1 &&
+            request_ != IssueReceiptRequest.getDefaultInstance()) {
+          request_ = IssueReceiptRequest.newBuilder((IssueReceiptRequest) request_)
+              .mergeFrom(value).buildPartial();
         } else {
           request_ = value;
         }
         onChanged();
       } else {
-        requestBuilder_.mergeFrom(value);
+        if (requestCase_ == 1) {
+          issueReceiptBuilder_.mergeFrom(value);
+        }
+        issueReceiptBuilder_.setMessage(value);
       }
-
+      requestCase_ = 1;
       return this;
     }
     /**
-     * <code>.api.IssueReceiptRequest request = 1;</code>
+     * <code>.api.IssueReceiptRequest issue_receipt = 1;</code>
      */
-    public Builder clearRequest() {
-      if (requestBuilder_ == null) {
-        request_ = null;
-        onChanged();
+    public Builder clearIssueReceipt() {
+      if (issueReceiptBuilder_ == null) {
+        if (requestCase_ == 1) {
+          requestCase_ = 0;
+          request_ = null;
+          onChanged();
+        }
       } else {
-        request_ = null;
-        requestBuilder_ = null;
+        if (requestCase_ == 1) {
+          requestCase_ = 0;
+          request_ = null;
+        }
+        issueReceiptBuilder_.clear();
       }
-
       return this;
     }
     /**
-     * <code>.api.IssueReceiptRequest request = 1;</code>
+     * <code>.api.IssueReceiptRequest issue_receipt = 1;</code>
      */
-    public IssueReceiptRequest.Builder getRequestBuilder() {
-      
-      onChanged();
-      return getRequestFieldBuilder().getBuilder();
+    public IssueReceiptRequest.Builder getIssueReceiptBuilder() {
+      return getIssueReceiptFieldBuilder().getBuilder();
     }
     /**
-     * <code>.api.IssueReceiptRequest request = 1;</code>
+     * <code>.api.IssueReceiptRequest issue_receipt = 1;</code>
      */
-    public io.grpc.bverify.IssueReceiptRequestOrBuilder getRequestOrBuilder() {
-      if (requestBuilder_ != null) {
-        return requestBuilder_.getMessageOrBuilder();
+    public IssueReceiptRequestOrBuilder getIssueReceiptOrBuilder() {
+      if ((requestCase_ == 1) && (issueReceiptBuilder_ != null)) {
+        return issueReceiptBuilder_.getMessageOrBuilder();
       } else {
-        return request_ == null ?
-            IssueReceiptRequest.getDefaultInstance() : request_;
+        if (requestCase_ == 1) {
+          return (IssueReceiptRequest) request_;
+        }
+        return IssueReceiptRequest.getDefaultInstance();
       }
     }
     /**
-     * <code>.api.IssueReceiptRequest request = 1;</code>
+     * <code>.api.IssueReceiptRequest issue_receipt = 1;</code>
      */
     private com.google.protobuf.SingleFieldBuilderV3<
-        IssueReceiptRequest, IssueReceiptRequest.Builder, io.grpc.bverify.IssueReceiptRequestOrBuilder>
-        getRequestFieldBuilder() {
-      if (requestBuilder_ == null) {
-        requestBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
-            IssueReceiptRequest, IssueReceiptRequest.Builder, io.grpc.bverify.IssueReceiptRequestOrBuilder>(
-                getRequest(),
+        IssueReceiptRequest, IssueReceiptRequest.Builder, IssueReceiptRequestOrBuilder>
+        getIssueReceiptFieldBuilder() {
+      if (issueReceiptBuilder_ == null) {
+        if (!(requestCase_ == 1)) {
+          request_ = IssueReceiptRequest.getDefaultInstance();
+        }
+        issueReceiptBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
+            IssueReceiptRequest, IssueReceiptRequest.Builder, IssueReceiptRequestOrBuilder>(
+                (IssueReceiptRequest) request_,
                 getParentForChildren(),
                 isClean());
         request_ = null;
       }
-      return requestBuilder_;
+      requestCase_ = 1;
+      onChanged();;
+      return issueReceiptBuilder_;
+    }
+
+    private com.google.protobuf.SingleFieldBuilderV3<
+        TransferReceiptRequest, TransferReceiptRequest.Builder, TransferReceiptRequestOrBuilder> transferReceiptBuilder_;
+    /**
+     * <code>.api.TransferReceiptRequest transfer_receipt = 2;</code>
+     */
+    public boolean hasTransferReceipt() {
+      return requestCase_ == 2;
+    }
+    /**
+     * <code>.api.TransferReceiptRequest transfer_receipt = 2;</code>
+     */
+    public TransferReceiptRequest getTransferReceipt() {
+      if (transferReceiptBuilder_ == null) {
+        if (requestCase_ == 2) {
+          return (TransferReceiptRequest) request_;
+        }
+        return TransferReceiptRequest.getDefaultInstance();
+      } else {
+        if (requestCase_ == 2) {
+          return transferReceiptBuilder_.getMessage();
+        }
+        return TransferReceiptRequest.getDefaultInstance();
+      }
+    }
+    /**
+     * <code>.api.TransferReceiptRequest transfer_receipt = 2;</code>
+     */
+    public Builder setTransferReceipt(TransferReceiptRequest value) {
+      if (transferReceiptBuilder_ == null) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        request_ = value;
+        onChanged();
+      } else {
+        transferReceiptBuilder_.setMessage(value);
+      }
+      requestCase_ = 2;
+      return this;
+    }
+    /**
+     * <code>.api.TransferReceiptRequest transfer_receipt = 2;</code>
+     */
+    public Builder setTransferReceipt(
+        TransferReceiptRequest.Builder builderForValue) {
+      if (transferReceiptBuilder_ == null) {
+        request_ = builderForValue.build();
+        onChanged();
+      } else {
+        transferReceiptBuilder_.setMessage(builderForValue.build());
+      }
+      requestCase_ = 2;
+      return this;
+    }
+    /**
+     * <code>.api.TransferReceiptRequest transfer_receipt = 2;</code>
+     */
+    public Builder mergeTransferReceipt(TransferReceiptRequest value) {
+      if (transferReceiptBuilder_ == null) {
+        if (requestCase_ == 2 &&
+            request_ != TransferReceiptRequest.getDefaultInstance()) {
+          request_ = TransferReceiptRequest.newBuilder((TransferReceiptRequest) request_)
+              .mergeFrom(value).buildPartial();
+        } else {
+          request_ = value;
+        }
+        onChanged();
+      } else {
+        if (requestCase_ == 2) {
+          transferReceiptBuilder_.mergeFrom(value);
+        }
+        transferReceiptBuilder_.setMessage(value);
+      }
+      requestCase_ = 2;
+      return this;
+    }
+    /**
+     * <code>.api.TransferReceiptRequest transfer_receipt = 2;</code>
+     */
+    public Builder clearTransferReceipt() {
+      if (transferReceiptBuilder_ == null) {
+        if (requestCase_ == 2) {
+          requestCase_ = 0;
+          request_ = null;
+          onChanged();
+        }
+      } else {
+        if (requestCase_ == 2) {
+          requestCase_ = 0;
+          request_ = null;
+        }
+        transferReceiptBuilder_.clear();
+      }
+      return this;
+    }
+    /**
+     * <code>.api.TransferReceiptRequest transfer_receipt = 2;</code>
+     */
+    public TransferReceiptRequest.Builder getTransferReceiptBuilder() {
+      return getTransferReceiptFieldBuilder().getBuilder();
+    }
+    /**
+     * <code>.api.TransferReceiptRequest transfer_receipt = 2;</code>
+     */
+    public TransferReceiptRequestOrBuilder getTransferReceiptOrBuilder() {
+      if ((requestCase_ == 2) && (transferReceiptBuilder_ != null)) {
+        return transferReceiptBuilder_.getMessageOrBuilder();
+      } else {
+        if (requestCase_ == 2) {
+          return (TransferReceiptRequest) request_;
+        }
+        return TransferReceiptRequest.getDefaultInstance();
+      }
+    }
+    /**
+     * <code>.api.TransferReceiptRequest transfer_receipt = 2;</code>
+     */
+    private com.google.protobuf.SingleFieldBuilderV3<
+        TransferReceiptRequest, TransferReceiptRequest.Builder, TransferReceiptRequestOrBuilder>
+        getTransferReceiptFieldBuilder() {
+      if (transferReceiptBuilder_ == null) {
+        if (!(requestCase_ == 2)) {
+          request_ = TransferReceiptRequest.getDefaultInstance();
+        }
+        transferReceiptBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
+            TransferReceiptRequest, TransferReceiptRequest.Builder, TransferReceiptRequestOrBuilder>(
+                (TransferReceiptRequest) request_,
+                getParentForChildren(),
+                isClean());
+        request_ = null;
+      }
+      requestCase_ = 2;
+      onChanged();;
+      return transferReceiptBuilder_;
     }
     public final Builder setUnknownFields(
         final com.google.protobuf.UnknownFieldSet unknownFields) {

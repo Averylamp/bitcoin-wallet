@@ -3,6 +3,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Observable;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -14,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import crpyto.CryptographicSignature;
 import crpyto.CryptographicUtils;
 import de.schildbach.wallet.ui.WalletActivity;
+import de.schildbach.wallet.ui.WalletTransactionsFragment;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.bverify.BVerifyServerAPIGrpc;
@@ -30,6 +32,7 @@ import io.grpc.bverify.PathResponse;
 import io.grpc.bverify.Receipt;
 import io.grpc.bverify.SubmitRequest;
 import io.grpc.bverify.SubmitResponse;
+import io.grpc.bverify.TransferReceiptRequest;
 import mpt.core.InsufficientAuthenticationDataException;
 import mpt.core.InvalidSerializationException;
 import mpt.core.Utils;
@@ -44,7 +47,8 @@ public class MockDepositor implements Runnable {
 	
 	// data 
 	private final byte[] adsKey;
-	private static final Set<Receipt> adsData = new HashSet<>();
+
+	public static final Set<Receipt> adsData = new HashSet<>();
 	private static final AuthenticatedSetServer ads = new MPTSetFull();
 	
 	// witnessing 
@@ -86,6 +90,7 @@ public class MockDepositor implements Runnable {
 		for(Receipt r : receipts) {
 			logger.info( "...adding receipt: ");
 			this.adsData.add(r);
+			updateUI();
 			byte[] receiptWitness = CryptographicUtils.witnessReceipt(r);
 			this.ads.insert(receiptWitness);
 		}
@@ -95,16 +100,55 @@ public class MockDepositor implements Runnable {
 		logger.info( "...setup complete!");
 
 	}
-	public void checkForCommitments(){
-		logger.info( "...polling server for forwarded requests");
-		IssueReceiptRequest request = this.getForwarded();
-		if(request != null) {
-			logger.info( "...request recieved, sending to UI");
-			sendApprovalRequestToUI(request);
 
-//			IssueReceiptRequest approvedRequest = this.approveRequestAndApply(request);
-//			logger.info( "...submitting approved request to server");
-//			this.submitApprovedRequest(approvedRequest);
+	public static void updateUI(){
+		WalletTransactionsFragment.receiptList.removeAll(WalletTransactionsFragment.receiptList);
+		WalletTransactionsFragment.receiptList.addAll(MockDepositor.adsData);
+		WalletTransactionsFragment.receiptAdapter.notifyDataSetChanged();
+	}
+//
+//	public void checkForCommitments(){
+//		logger.info( "...polling server for forwarded requests");
+//		IssueReceiptRequest request = this.getForwarded();
+//		if(request != null) {
+//			logger.info( "...request recieved, sending to UI");
+//			sendApprovalRequestToUI(request);
+//
+////			IssueReceiptRequest approvedRequest = this.approveRequestAndApply(request);
+////			logger.info( "...submitting approved request to server");
+////			this.submitApprovedRequest(approvedRequest);
+//		}
+//		logger.info( "...polling sever for new commitments");
+//		List<byte[]> commitments  = this.getCommitments();
+//		// get the new commitments if any
+//		List<byte[]> newCommitments = commitments.subList(this.currentCommitmentNumber+1, commitments.size());
+//		if(newCommitments.size() > 0) {
+//			for(byte[] newCommitment : newCommitments) {
+//				int newCommitmentNumber = this.currentCommitmentNumber + 1;
+//				logger.info( "...new commitment found asking for proof");
+//				boolean result = this.checkCommitment(newCommitment, newCommitmentNumber);
+//				this.currentCommitmentNumber = newCommitmentNumber;
+//				this.currentCommitment = newCommitment;
+//			}
+//		}
+//	}
+	/**
+	 * Periodically the mock depositor polls the serve and approves any requests
+	 */
+	@Override
+	public void run() {
+		logger.info( "...polling server for forwarded requests");
+		GetForwardedResponse approvals = this.getForwarded();
+		if(approvals.hasIssueReceipt()) {
+			sendApprovalRequestToUI(approvals.getIssueReceipt());
+//			logger.info( "...submitting approved request to UI");
+//			IssueReceiptRequest approvedRequest = this.approveRequestAndApply(approvals.getIssueReceipt());
+//			MockDepositor.submitApprovedRequest(approvedRequest);
+		}
+		if(approvals.hasTransferReceipt()) {
+			TransferReceiptRequest approvedRequest = this.approveTransferRequestAndApply(approvals.getTransferReceipt());
+			logger.info( "...submitting approved request to server");
+			MockDepositor.submitApprovedRequest(approvedRequest);
 		}
 		logger.info( "...polling sever for new commitments");
 		List<byte[]> commitments  = this.getCommitments();
@@ -114,41 +158,37 @@ public class MockDepositor implements Runnable {
 			for(byte[] newCommitment : newCommitments) {
 				int newCommitmentNumber = this.currentCommitmentNumber + 1;
 				logger.info( "...new commitment found asking for proof");
-				boolean result = this.checkCommitment(newCommitment, newCommitmentNumber);
+				this.checkCommitment(newCommitment, newCommitmentNumber);
 				this.currentCommitmentNumber = newCommitmentNumber;
 				this.currentCommitment = newCommitment;
 			}
 		}
 	}
-	/**
-	 * Periodically the mock depositor polls the serve and approves any requests
-	 */
-	@Override
-	public void run() {
-		logger.info( "...polling server for forwarded requests");
-		IssueReceiptRequest request = this.getForwarded();
-		if(request != null) {
-			logger.info( "...request recieved, sending to UI");
-			sendApprovalRequestToUI(request);
-
-//			IssueReceiptRequest approvedRequest = this.approveRequestAndApply(request);
-////			logger.info( "...submitting approved request to server");
-//			this.submitApprovedRequest(approvedRequest);
-		}
-//		logger.info( "...polling sever for new commitments");
-		List<byte[]> commitments  = this.getCommitments();
-		// get the new commitments if any
-		List<byte[]> newCommitments = commitments.subList(this.currentCommitmentNumber+1, commitments.size());
-		if(newCommitments.size() > 0) {
-			for(byte[] newCommitment : newCommitments) {
-				int newCommitmentNumber = this.currentCommitmentNumber + 1;
-//				logger.info( "...new commitment found asking for proof");
-				boolean result = this.checkCommitment(newCommitment, newCommitmentNumber);
-				this.currentCommitmentNumber = newCommitmentNumber;
-				this.currentCommitment = newCommitment;
-			}
-		}
-	}
+//	public void run() {
+//		logger.info( "...polling server for forwarded requests");
+//		IssueReceiptRequest request = this.getForwarded();
+//		if(request != null) {
+//			logger.info( "...request recieved, sending to UI");
+//			sendApprovalRequestToUI(request);
+//
+////			IssueReceiptRequest approvedRequest = this.approveRequestAndApply(request);
+//////			logger.info( "...submitting approved request to server");
+////			this.submitApprovedRequest(approvedRequest);
+//		}
+////		logger.info( "...polling sever for new commitments");
+//		List<byte[]> commitments  = this.getCommitments();
+//		// get the new commitments if any
+//		List<byte[]> newCommitments = commitments.subList(this.currentCommitmentNumber+1, commitments.size());
+//		if(newCommitments.size() > 0) {
+//			for(byte[] newCommitment : newCommitments) {
+//				int newCommitmentNumber = this.currentCommitmentNumber + 1;
+////				logger.info( "...new commitment found asking for proof");
+//				boolean result = this.checkCommitment(newCommitment, newCommitmentNumber);
+//				this.currentCommitmentNumber = newCommitmentNumber;
+//				this.currentCommitment = newCommitment;
+//			}
+//		}
+//	}
 	
 	public void shutdown() throws InterruptedException {
 	    this.channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
@@ -193,16 +233,12 @@ public class MockDepositor implements Runnable {
 		}
 		return res;
 	}
-	
-	private IssueReceiptRequest getForwarded() {
+
+	private GetForwardedResponse getForwarded() {
 		GetForwardedRequest request = GetForwardedRequest.newBuilder()
 				.setId(this.account.getIdAsString())
 				.build();
-		GetForwardedResponse response = this.blockingStub.getForwarded(request);
-		if(response.hasRequest()) {
-			return response.getRequest();
-		}
-		return null;
+		return this.blockingStub.getForwarded(request);
 	}
 
 	private void sendApprovalRequestToUI(IssueReceiptRequest request){
@@ -213,6 +249,9 @@ public class MockDepositor implements Runnable {
 //		logger.info( "...approving request: "+request);
 		Receipt r = request.getReceipt();
 		MockDepositor.adsData.add(r);
+		WalletTransactionsFragment.receiptList.removeAll(WalletTransactionsFragment.receiptList);
+		WalletTransactionsFragment.receiptList.addAll(MockDepositor.adsData);
+		updateUI();
 		byte[] witness = CryptographicUtils.witnessReceipt(r);
 		MockDepositor.ads.insert(witness);
 		byte[] newRoot = MockDepositor.ads.commitment();
@@ -228,13 +267,47 @@ public class MockDepositor implements Runnable {
 		assert request.getSignatureDepositor().toByteArray() != null;
 		assert request.getSignatureWarehouse().toByteArray() != null;
 		SubmitRequest requestToSend = SubmitRequest.newBuilder()
-				.setRequest(request)
+				.setIssueReceipt(request)
 				.build();
 		SubmitResponse response = MockDepositor.blockingStub.submit(requestToSend);
 		boolean accepted = response.getAccepted();
 //		logger.info("...accepted? - "+accepted);
 		return accepted;
 	}
+
+	private static boolean submitApprovedRequest(TransferReceiptRequest request) {
+		logger.info("...submitting request to server: ");
+		SubmitRequest requestToSend = SubmitRequest.newBuilder()
+				.setTransferReceipt(request)
+				.build();
+		SubmitResponse response = MockDepositor.blockingStub.submit(requestToSend);
+		boolean accepted = response.getAccepted();
+		logger.info("...accepted? - ");
+		return accepted;
+	}
+
+	private TransferReceiptRequest approveTransferRequestAndApply(TransferReceiptRequest request) {
+		logger.info( "...approving transfer request: "+request);
+		Receipt r = request.getReceipt();
+		byte[] witness = CryptographicUtils.witnessReceipt(r);
+		if(request.getCurrentOwnerId().equals(this.account.getIdAsString())) {
+			logger.info( "...removing receipt");
+			this.adsData.remove(r);
+			this.ads.delete(witness);
+			byte[] newRoot = this.ads.commitment();
+			logger.info( "...NEW ADS ROOT: "+Utils.byteArrayAsHexString(newRoot));
+			byte[] sig = CryptographicSignature.sign(newRoot, this.account.getPrivateKey());
+			return request.toBuilder().setSignatureCurrentOwner(ByteString.copyFrom(sig)).build();
+		}
+		logger.info( "...adding receipt");
+		this.ads.insert(witness);
+		this.adsData.add(r);
+		byte[] newRoot = this.ads.commitment();
+		logger.info( "...NEW ADS ROOT: "+Utils.byteArrayAsHexString(newRoot));
+		byte[] sig = CryptographicSignature.sign(newRoot, this.account.getPrivateKey());
+		return request.toBuilder().setSignatureNewOwner(ByteString.copyFrom(sig)).build();
+	}
+
 	
 	private boolean checkCommitment(final byte[] commitment, final int commitmentNumber) {
 		logger.info( "...checking commtiment : #"+commitmentNumber+

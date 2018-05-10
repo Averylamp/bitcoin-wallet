@@ -246,7 +246,7 @@ public final class WalletActivity extends AbstractWalletActivity {
             int port = 50051;
             AssetManager am = getAssets();
 //            String fullFilename = "demos/pki/" + filename;
-            InputStream inputStream = am.open("Alice");
+            InputStream inputStream = am.open("demos/pki/df3b507b-31c7-4b07-bea2-4256144c2c41");
             File f = createFileFromInputStream(inputStream, "Alice");
             FileInputStream fis = new FileInputStream(f);
             byte[] data = new byte[(int) f.length()];

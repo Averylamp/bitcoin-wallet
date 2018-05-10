@@ -8,15 +8,30 @@ public interface GetForwardedResponseOrBuilder extends
     com.google.protobuf.MessageOrBuilder {
 
   /**
-   * <code>.api.IssueReceiptRequest request = 1;</code>
+   * <code>.api.IssueReceiptRequest issue_receipt = 1;</code>
    */
-  boolean hasRequest();
+  boolean hasIssueReceipt();
   /**
-   * <code>.api.IssueReceiptRequest request = 1;</code>
+   * <code>.api.IssueReceiptRequest issue_receipt = 1;</code>
    */
-  IssueReceiptRequest getRequest();
+  IssueReceiptRequest getIssueReceipt();
   /**
-   * <code>.api.IssueReceiptRequest request = 1;</code>
+   * <code>.api.IssueReceiptRequest issue_receipt = 1;</code>
    */
-  IssueReceiptRequestOrBuilder getRequestOrBuilder();
+  IssueReceiptRequestOrBuilder getIssueReceiptOrBuilder();
+
+  /**
+   * <code>.api.TransferReceiptRequest transfer_receipt = 2;</code>
+   */
+  boolean hasTransferReceipt();
+  /**
+   * <code>.api.TransferReceiptRequest transfer_receipt = 2;</code>
+   */
+  TransferReceiptRequest getTransferReceipt();
+  /**
+   * <code>.api.TransferReceiptRequest transfer_receipt = 2;</code>
+   */
+  TransferReceiptRequestOrBuilder getTransferReceiptOrBuilder();
+
+  public GetForwardedResponse.RequestCase getRequestCase();
 }

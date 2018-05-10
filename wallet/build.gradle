@@ -115,7 +115,9 @@ android {
         pickFirst 'META-INF/INDEX.LIST'
         pickFirst 'META-INF/io.netty.versions.properties'
     }
+
 }
+
 
 task svgToPngMipmap(type: fr.avianey.androidsvgdrawable.gradle.SvgDrawableTask) {
     from = files('graphics/mipmap')
