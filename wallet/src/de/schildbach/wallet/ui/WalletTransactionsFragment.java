@@ -64,6 +64,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.PopupMenu;
@@ -155,6 +156,9 @@ public class WalletTransactionsFragment extends Fragment implements Transactions
         receiptListView = (ListView) view.findViewById(R.id.receipt_list_view);
         receiptAdapter = new ReceiptArrayAdapter(getContext(), R.layout.receipt_list_item, receiptList);
         receiptListView.setAdapter(receiptAdapter);
+        receiptListView.setItemsCanFocus(false);
+
+
 
         recyclerView = (RecyclerView) view.findViewById(R.id.wallet_transactions_list);
         recyclerView.setHasFixedSize(true);

@@ -142,7 +142,19 @@
         <activity
             android:name="de.schildbach.wallet.ui.ReceiptIssueActivity"
             android:configChanges="keyboard|keyboardHidden"
-            android:label="@string/request_coins_activity_title"
+            android:label="Receipt Issue"
+            android:theme="@style/My.Theme.ChildActivity"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name="de.schildbach.wallet.ui.ReceiptTransferActivity"
+            android:configChanges="keyboard|keyboardHidden"
+            android:label="Receipt Transfer"
+            android:theme="@style/My.Theme.ChildActivity"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name="de.schildbach.wallet.ui.ReceiptInitiateTransferActivity"
+            android:configChanges="keyboard|keyboardHidden"
+            android:label="Initiate Transfer"
             android:theme="@style/My.Theme.ChildActivity"
             android:windowSoftInputMode="adjustResize" />
         <activity

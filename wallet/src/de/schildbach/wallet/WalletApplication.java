@@ -55,7 +55,6 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.SettableFuture;
 
-import bverify.Client;
 import bverify.DecompressibleInputStream;
 import demo.MockDepositor;
 import de.schildbach.wallet.service.BlockchainService;
@@ -107,7 +106,6 @@ public class WalletApplication extends Application {
 
     private static final Logger log = LoggerFactory.getLogger(WalletApplication.class);
 
-    private static Client client;
 
     @Override
     public void onCreate() {
@@ -152,7 +150,6 @@ public class WalletApplication extends Application {
         cleanupFiles();
 
         initNotificationManager();
-
     }
 
 

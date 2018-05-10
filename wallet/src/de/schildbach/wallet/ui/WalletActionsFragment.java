@@ -17,7 +17,6 @@
 
 package de.schildbach.wallet.ui;
 
-import bverify.Receipt;
 import de.schildbach.wallet.R;
 import de.schildbach.wallet.util.CheatSheet;
 
@@ -61,7 +60,7 @@ public final class WalletActionsFragment extends Fragment {
         sendButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(final View v) {
-                activity.handleSendCoins();
+//                activity.handleSendCoins();
             }
         });
 

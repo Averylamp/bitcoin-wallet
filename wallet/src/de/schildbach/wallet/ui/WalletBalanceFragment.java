@@ -19,6 +19,7 @@ package de.schildbach.wallet.ui;
 
 import org.bitcoinj.core.Coin;
 
+import bverify.ReceiptStatisticsSubscriber;
 import de.schildbach.wallet.Configuration;
 import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.R;
@@ -30,6 +31,7 @@ import de.schildbach.wallet.data.WalletBalanceLiveData;
 import de.schildbach.wallet.service.BlockchainState;
 import de.schildbach.wallet.ui.send.FeeCategory;
 import de.schildbach.wallet.ui.send.SendCoinsActivity;
+import demo.MockDepositor;
 
 import android.app.Application;
 import android.arch.lifecycle.AndroidViewModel;
@@ -52,7 +54,7 @@ import android.widget.TextView;
 /**
  * @author Andreas Schildbach
  */
-public final class WalletBalanceFragment extends Fragment {
+public final class WalletBalanceFragment extends Fragment implements ReceiptStatisticsSubscriber {
     private WalletActivity activity;
     private WalletApplication application;
     private Configuration config;
@@ -117,7 +119,7 @@ public final class WalletBalanceFragment extends Fragment {
     public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
-
+        MockDepositor.receiptStaticticsSubscribers.add(this);
         viewModel = ViewModelProviders.of(this).get(ViewModel.class);
         viewModel.getBlockchainState().observe(this, new Observer<BlockchainState>() {
             @Override
@@ -289,9 +291,9 @@ public final class WalletBalanceFragment extends Fragment {
             viewBalance.setVisibility(View.INVISIBLE);
         }
 
-        viewReceiptsTitle.setText("Total Receipts: 10");
+//        viewReceiptsTitle.setText("Total Receipts: 0");
         viewReceiptsTitle.setVisibility(View.VISIBLE);
-        viewReceiptsSubtitle.setText("Warehouses: 1");
+//        viewReceiptsSubtitle.setText("Commitments: 0");
         viewReceiptsSubtitle.setVisibility(View.VISIBLE);
 //        viewBalanceWarning.setVisibility(View.INVISIBLE);
 
@@ -299,6 +301,11 @@ public final class WalletBalanceFragment extends Fragment {
 //        viewBalanceBtc.setVisibility(View.INVISIBLE);
 //        viewBalanceLocal.setVisibility(View.INVISIBLE);
 //        viewBalanceWarning.setVisibility(View.INVISIBLE);
+    }
+    public void newStatisticsUpdates(int receipts, int commitments){
+
+        viewReceiptsTitle.setText("Total Receipts: " + receipts);
+        viewReceiptsSubtitle.setText("Commitments: " + commitments);
     }
 
 }

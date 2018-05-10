@@ -22,7 +22,6 @@ import org.bitcoinj.core.VerificationException;
 import org.bitcoinj.core.VersionedChecksummedBytes;
 import org.bitcoinj.wallet.Wallet;
 
-import bverify.Receipt;
 import de.schildbach.wallet.Configuration;
 import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.R;
@@ -44,6 +43,8 @@ import de.schildbach.wallet.util.Nfc;
 import de.schildbach.wallet.util.OnFirstPreDraw;
 import demo.MockDepositor;
 import io.grpc.bverify.IssueReceiptRequest;
+import io.grpc.bverify.Receipt;
+import io.grpc.bverify.TransferReceiptRequest;
 import pki.Account;
 
 import android.animation.Animator;
@@ -253,7 +254,24 @@ public final class WalletActivity extends AbstractWalletActivity {
             fis.read(data);
             fis.close();
             Account alice = Account.fromBytes(data);
-            aliceClient = new MockDepositor(alice, host, port,  this);
+
+            inputStream = am.open("demos/pki/e5985074-99c1-4fa6-80bc-dca299b5b12f");
+            f = createFileFromInputStream(inputStream, "Alice");
+            fis = new FileInputStream(f);
+            data = new byte[(int) f.length()];
+            fis.read(data);
+            fis.close();
+            Account bob = Account.fromBytes(data);
+
+            String model = Build.MODEL;
+            log.info(model);
+            if (model.equalsIgnoreCase("SM-N950U1")) {
+                aliceClient = new MockDepositor(alice, host, port, this);
+                aliceClient.transferAccount = bob;
+            }else{
+                aliceClient = new MockDepositor(bob, host, port, this);
+                aliceClient.transferAccount = alice;
+            }
             // create a thread that polls the server and automatically approves any requests
             ScheduledExecutorService exec = Executors.newSingleThreadScheduledExecutor();
             exec.scheduleAtFixedRate(aliceClient, 0, 5, TimeUnit.SECONDS);
@@ -609,6 +627,16 @@ public final class WalletActivity extends AbstractWalletActivity {
         Intent receiptIssueIntent = new Intent(this, ReceiptIssueActivity.class);
         receiptIssueIntent.putExtra("receipt", receipt);
         startActivity(receiptIssueIntent);
+    }
+
+    public void handleReceiptTransfer(TransferReceiptRequest receipt){
+        Intent receiptIssueIntent = new Intent(this, ReceiptTransferActivity.class);
+        receiptIssueIntent.putExtra("receipt", receipt);
+        startActivity(receiptIssueIntent);
+    }
+
+    public static void handleInitiateReceiptTranfer(Receipt receipt){
+
     }
 
     public void handleRequestCoins() {

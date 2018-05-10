@@ -1,6 +1,11 @@
 package demo;
+import android.os.Handler;
+import android.os.Looper;
+
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -8,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
@@ -15,6 +21,8 @@ import com.google.protobuf.ByteString;
 
 import org.slf4j.LoggerFactory;
 
+import bverify.ReceiptDateComparator;
+import bverify.ReceiptStatisticsSubscriber;
 import crpyto.CryptographicSignature;
 import crpyto.CryptographicUtils;
 import de.schildbach.wallet.ui.WalletActivity;
@@ -27,6 +35,7 @@ import io.grpc.bverify.CommitmentsRequest;
 import io.grpc.bverify.CommitmentsResponse;
 import io.grpc.bverify.DataRequest;
 import io.grpc.bverify.DataResponse;
+import io.grpc.bverify.ForwardRequest;
 import io.grpc.bverify.GetForwardedRequest;
 import io.grpc.bverify.GetForwardedResponse;
 import io.grpc.bverify.IssueReceiptRequest;
@@ -46,8 +55,8 @@ import pki.Account;
 
 public class MockDepositor implements Runnable {
 	private static final org.slf4j.Logger logger = LoggerFactory.getLogger(MockDepositor.class);
-	private static Account account = null;
-	
+	public static Account account = null;
+	public static Account transferAccount = null;
 	// data 
 	private final byte[] adsKey;
 
@@ -55,10 +64,10 @@ public class MockDepositor implements Runnable {
 	public static final Map<Receipt, Date> receiptDateMap = new HashMap<>();
 	public static final Set<Receipt> adsData = new HashSet<>();
 	private static final AuthenticatedSetServer ads = new MPTSetFull();
-	
+	public static final List<ReceiptStatisticsSubscriber> receiptStaticticsSubscribers = new ArrayList<ReceiptStatisticsSubscriber>();
 	// witnessing 
-	private byte[] currentCommitment;
-	private int currentCommitmentNumber;
+	private static byte[] currentCommitment;
+	public static int currentCommitmentNumber;
 	
 	// gRPC
 	private static ManagedChannel channel = null;
@@ -94,27 +103,80 @@ public class MockDepositor implements Runnable {
 		List<Receipt> receipts = this.getDataRequest(this.adsKey, this.currentCommitmentNumber);
 		for(Receipt r : receipts) {
 			logger.info( "...adding receipt: ");
-			MockDepositor.addReceipt(r);
+			MockDepositor.addReceipt(r, false);
 			byte[] receiptWitness = CryptographicUtils.witnessReceipt(r);
 			this.ads.insert(receiptWitness);
 		}
-		
 		logger.info( "...asking for a proof, checking latest commitment");
 		this.checkCommitment(this.currentCommitment, this.currentCommitmentNumber);
 		logger.info( "...setup complete!");
+		updateStatistics();
+		updateUI();
 
 	}
 
-	public static void addReceipt(Receipt receipt){
+	public static void addReceipt(Receipt receipt, boolean addDate){
 		MockDepositor.adsData.add(receipt);
+		if (addDate) {
+			MockDepositor.receiptDateMap.put(receipt, new Date());
+		}else{
+			SimpleDateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss z y");
+			try {
+				Date receiptDate = dateFormat.parse(receipt.getDate());
+				MockDepositor.receiptDateMap.put(receipt, receiptDate);
+			}catch (Exception e){
+				e.printStackTrace();
+			}
+		}
 		updateUI();
-		MockDepositor.receiptDateMap.put(receipt, new Date());
+		updateStatistics();
+	}
+
+	public static void removeReceipt(Receipt receipt){
+		MockDepositor.adsData.remove(receipt);
+		updateUI();
+		updateStatistics();
+		MockDepositor.receiptDateMap.remove(receipt);
 	}
 
 	public static void updateUI(){
-		WalletTransactionsFragment.receiptList.removeAll(WalletTransactionsFragment.receiptList);
-		WalletTransactionsFragment.receiptList.addAll(MockDepositor.adsData);
-		WalletTransactionsFragment.receiptAdapter.notifyDataSetChanged();
+		Handler mainHandler = new Handler(Looper.getMainLooper());
+
+		Runnable myRunnable = new Runnable() {
+			@Override
+			public void run() {
+
+				WalletTransactionsFragment.receiptList.removeAll(WalletTransactionsFragment.receiptList);
+				ReceiptDateComparator rcc = new ReceiptDateComparator(MockDepositor.receiptDateMap);
+				logger.info(String.valueOf(MockDepositor.receiptDateMap.values()));
+				TreeMap<Receipt, Date> sorted_map = new TreeMap<Receipt, Date>(rcc);
+				sorted_map.putAll(MockDepositor.receiptDateMap);
+				for (Receipt r: sorted_map.keySet()){
+					if (MockDepositor.adsData.contains(r)) {
+						WalletTransactionsFragment.receiptList.add(r);
+					}
+				}
+
+				WalletTransactionsFragment.receiptAdapter.notifyDataSetChanged();
+			} // This is your code
+		};
+		mainHandler.post(myRunnable);
+	}
+
+	public static void updateStatistics(){
+		Handler mainHandler = new Handler(Looper.getMainLooper());
+
+		Runnable myRunnable = new Runnable() {
+			@Override
+			public void run() {
+				for (ReceiptStatisticsSubscriber subscriber: MockDepositor.receiptStaticticsSubscribers){
+					logger.info("Updating Statistics");
+					subscriber.newStatisticsUpdates(MockDepositor.adsData.size(), MockDepositor.currentCommitmentNumber);
+					logger.info("Finished updating Statistics");
+				}
+			} // This is your code
+		};
+		mainHandler.post(myRunnable);
 	}
 //
 //	public void checkForCommitments(){
@@ -156,20 +218,22 @@ public class MockDepositor implements Runnable {
 //			MockDepositor.submitApprovedRequest(approvedRequest);
 		}
 		if(approvals.hasTransferReceipt()) {
-			TransferReceiptRequest approvedRequest = this.approveTransferRequestAndApply(approvals.getTransferReceipt());
-			logger.info( "...submitting approved request to server");
-			MockDepositor.submitApprovedRequest(approvedRequest);
+			sendTransferRequestToUI(approvals.getTransferReceipt());
+
+//			TransferReceiptRequest approvedRequest = this.approveTransferRequestAndApply(approvals.getTransferReceipt());
+//			logger.info( "...submitting approved request to server");
+//			MockDepositor.submitApprovedRequest(approvedRequest);
 		}
 		logger.info( "...polling sever for new commitments");
 		List<byte[]> commitments  = this.getCommitments();
 		// get the new commitments if any
-		List<byte[]> newCommitments = commitments.subList(this.currentCommitmentNumber+1, commitments.size());
+		List<byte[]> newCommitments = commitments.subList(MockDepositor.currentCommitmentNumber+1, commitments.size());
 		if(newCommitments.size() > 0) {
 			for(byte[] newCommitment : newCommitments) {
-				int newCommitmentNumber = this.currentCommitmentNumber + 1;
+				int newCommitmentNumber = MockDepositor.currentCommitmentNumber + 1;
 				logger.info( "...new commitment found asking for proof");
 				this.checkCommitment(newCommitment, newCommitmentNumber);
-				this.currentCommitmentNumber = newCommitmentNumber;
+				MockDepositor.currentCommitmentNumber = newCommitmentNumber;
 				this.currentCommitment = newCommitment;
 			}
 		}
@@ -255,10 +319,14 @@ public class MockDepositor implements Runnable {
 		activity.handleReceiptIssue(request);
 	}
 
+	private void sendTransferRequestToUI(TransferReceiptRequest request){
+		activity.handleReceiptTransfer(request);
+	}
+
 	public static IssueReceiptRequest approveRequestAndApply(IssueReceiptRequest request) {
 //		logger.info( "...approving request: "+request);
 		Receipt r = request.getReceipt();
-		MockDepositor.addReceipt(r);
+		MockDepositor.addReceipt(r, false);
 
 		byte[] witness = CryptographicUtils.witnessReceipt(r);
 		MockDepositor.ads.insert(witness);
@@ -283,7 +351,7 @@ public class MockDepositor implements Runnable {
 		return accepted;
 	}
 
-	private static boolean submitApprovedRequest(TransferReceiptRequest request) {
+	public static boolean submitApprovedRequest(TransferReceiptRequest request) {
 		logger.info("...submitting request to server: ");
 		SubmitRequest requestToSend = SubmitRequest.newBuilder()
 				.setTransferReceipt(request)
@@ -294,25 +362,25 @@ public class MockDepositor implements Runnable {
 		return accepted;
 	}
 
-	private TransferReceiptRequest approveTransferRequestAndApply(TransferReceiptRequest request) {
+	public static TransferReceiptRequest approveTransferRequestAndApply(TransferReceiptRequest request) {
 		logger.info( "...approving transfer request: ");
 		Receipt r = request.getReceipt();
 		byte[] witness = CryptographicUtils.witnessReceipt(r);
-		if(request.getCurrentOwnerId().equals(this.account.getIdAsString())) {
+		if(request.getCurrentOwnerId().equals(MockDepositor.account.getIdAsString())) {
 			logger.info( "...removing receipt");
-			this.adsData.remove(r);
-			this.ads.delete(witness);
-			byte[] newRoot = this.ads.commitment();
+			MockDepositor.removeReceipt(r);
+			MockDepositor.ads.delete(witness);
+			byte[] newRoot = MockDepositor.ads.commitment();
 			logger.info( "...NEW ADS ROOT: ");
-			byte[] sig = CryptographicSignature.sign(newRoot, this.account.getPrivateKey());
+			byte[] sig = CryptographicSignature.sign(newRoot, MockDepositor.account.getPrivateKey());
 			return request.toBuilder().setSignatureCurrentOwner(ByteString.copyFrom(sig)).build();
 		}
 		logger.info( "...adding receipt");
-		this.ads.insert(witness);
-		MockDepositor.addReceipt(r);
-		byte[] newRoot = this.ads.commitment();
+		MockDepositor.ads.insert(witness);
+		MockDepositor.addReceipt(r, true);
+		byte[] newRoot = MockDepositor.ads.commitment();
 		logger.info( "...NEW ADS ROOT: ");
-		byte[] sig = CryptographicSignature.sign(newRoot, this.account.getPrivateKey());
+		byte[] sig = CryptographicSignature.sign(newRoot, MockDepositor.account.getPrivateKey());
 		return request.toBuilder().setSignatureNewOwner(ByteString.copyFrom(sig)).build();
 	}
 
@@ -339,12 +407,29 @@ public class MockDepositor implements Runnable {
 				System.err.println("COMMITMENT DOES NOT MATCH");
 			}
 			logger.info( "...commitment accepted");
+			MockDepositor.updateStatistics();
 			return true;
 		} catch (InsufficientAuthenticationDataException e) {
 			e.printStackTrace();
 			System.err.println("Error!");
 			throw new RuntimeException("bad proof!");
 		}
+	}
+
+	public static void transferReceipt(Account recepient, Receipt receipt) {
+		logger.info("...transferring receipt: "+""+" -> ");
+		TransferReceiptRequest request = TransferReceiptRequest.newBuilder()
+				.setReceipt(receipt)
+				.setCurrentOwnerId(MockDepositor.account.getIdAsString())
+				.setNewOwnerId(recepient.getIdAsString())
+				.build();
+		request = MockDepositor.approveTransferRequestAndApply(request);
+		ForwardRequest forward = ForwardRequest.newBuilder()
+				.setTransferReceipt(request)
+				.setForwardToId(receipt.getWarehouseId())
+				.build();
+		logger.info( "...forwarding to: "+receipt.getWarehouseId());
+		MockDepositor.blockingStub.forward(forward);
 	}
 
 	
