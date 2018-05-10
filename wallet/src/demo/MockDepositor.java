@@ -1,8 +1,11 @@
 package demo;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Observable;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -48,6 +51,8 @@ public class MockDepositor implements Runnable {
 	// data 
 	private final byte[] adsKey;
 
+
+	public static final Map<Receipt, Date> receiptDateMap = new HashMap<>();
 	public static final Set<Receipt> adsData = new HashSet<>();
 	private static final AuthenticatedSetServer ads = new MPTSetFull();
 	
@@ -89,8 +94,7 @@ public class MockDepositor implements Runnable {
 		List<Receipt> receipts = this.getDataRequest(this.adsKey, this.currentCommitmentNumber);
 		for(Receipt r : receipts) {
 			logger.info( "...adding receipt: ");
-			this.adsData.add(r);
-			updateUI();
+			MockDepositor.addReceipt(r);
 			byte[] receiptWitness = CryptographicUtils.witnessReceipt(r);
 			this.ads.insert(receiptWitness);
 		}
@@ -99,6 +103,12 @@ public class MockDepositor implements Runnable {
 		this.checkCommitment(this.currentCommitment, this.currentCommitmentNumber);
 		logger.info( "...setup complete!");
 
+	}
+
+	public static void addReceipt(Receipt receipt){
+		MockDepositor.adsData.add(receipt);
+		updateUI();
+		MockDepositor.receiptDateMap.put(receipt, new Date());
 	}
 
 	public static void updateUI(){
@@ -248,10 +258,8 @@ public class MockDepositor implements Runnable {
 	public static IssueReceiptRequest approveRequestAndApply(IssueReceiptRequest request) {
 //		logger.info( "...approving request: "+request);
 		Receipt r = request.getReceipt();
-		MockDepositor.adsData.add(r);
-		WalletTransactionsFragment.receiptList.removeAll(WalletTransactionsFragment.receiptList);
-		WalletTransactionsFragment.receiptList.addAll(MockDepositor.adsData);
-		updateUI();
+		MockDepositor.addReceipt(r);
+
 		byte[] witness = CryptographicUtils.witnessReceipt(r);
 		MockDepositor.ads.insert(witness);
 		byte[] newRoot = MockDepositor.ads.commitment();
@@ -287,7 +295,7 @@ public class MockDepositor implements Runnable {
 	}
 
 	private TransferReceiptRequest approveTransferRequestAndApply(TransferReceiptRequest request) {
-		logger.info( "...approving transfer request: "+request);
+		logger.info( "...approving transfer request: ");
 		Receipt r = request.getReceipt();
 		byte[] witness = CryptographicUtils.witnessReceipt(r);
 		if(request.getCurrentOwnerId().equals(this.account.getIdAsString())) {
@@ -295,15 +303,15 @@ public class MockDepositor implements Runnable {
 			this.adsData.remove(r);
 			this.ads.delete(witness);
 			byte[] newRoot = this.ads.commitment();
-			logger.info( "...NEW ADS ROOT: "+Utils.byteArrayAsHexString(newRoot));
+			logger.info( "...NEW ADS ROOT: ");
 			byte[] sig = CryptographicSignature.sign(newRoot, this.account.getPrivateKey());
 			return request.toBuilder().setSignatureCurrentOwner(ByteString.copyFrom(sig)).build();
 		}
 		logger.info( "...adding receipt");
 		this.ads.insert(witness);
-		this.adsData.add(r);
+		MockDepositor.addReceipt(r);
 		byte[] newRoot = this.ads.commitment();
-		logger.info( "...NEW ADS ROOT: "+Utils.byteArrayAsHexString(newRoot));
+		logger.info( "...NEW ADS ROOT: ");
 		byte[] sig = CryptographicSignature.sign(newRoot, this.account.getPrivateKey());
 		return request.toBuilder().setSignatureNewOwner(ByteString.copyFrom(sig)).build();
 	}
