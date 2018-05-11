@@ -265,7 +265,7 @@ public final class WalletActivity extends AbstractWalletActivity {
 
             String model = Build.MODEL;
             log.info(model);
-            if (model.equalsIgnoreCase("SM-N950U1")) {
+            if (                                                             model.equalsIgnoreCase("SM-N950U1")) {
                 aliceClient = new MockDepositor(alice, host, port, this);
                 aliceClient.transferAccount = bob;
             }else{

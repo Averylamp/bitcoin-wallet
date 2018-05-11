@@ -65,8 +65,8 @@ public class ReceiptArrayAdapter extends ArrayAdapter<Receipt> {
         }else{
             holder.titleTextView.setText(item.getDate());
         }
-        holder.subtitleTextView.setText(item.getCategory());
-        holder.detailTextView.setText("Price: " + item.getPrice());
+        holder.subtitleTextView.setText(item.getCategory() + " - " + item.getAccountant());
+        holder.detailTextView.setText("Weight: " + item.getWeight());
         row.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
